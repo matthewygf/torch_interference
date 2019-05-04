@@ -79,30 +79,6 @@ def create_process(model_name, index, experiment_path, percent=0.0, is_nvprof=Fa
     curr_dir = os.path.abspath(os.path.dirname(__file__))
     cmd = cmd + ['--dataset_dir', curr_dir]
     cmd = cmd + ['--run_name', output_dir_name]
-
-    # train_dir_path = '--train_dir' if 'word' not in model_name else '--save_path' 
-    # simple_examples_data = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-    # cmd += [train_dir_path, train_dir]
-    # if 'word' in model_name:
-    #     data_path_simple = os.path.join(simple_examples_data, 'simple-examples')
-    #     data_path_simple = os.path.join(data_path_simple, 'data')
-    #     data_path = ['--data_path', data_path_simple]
-    #     cmd += data_path
-    #     timestep = ['--max_number_of_steps', '2000']
-    # else:
-    #     if is_nvprof:
-    #         timestep_num = '20'
-    #     else:
-    #         timestep_num = '500' 
-    #         if 'mobile' in model_name:
-    #             timestep_num = '500'
-    #     timestep = ['--max_number_of_steps', timestep_num]
-
-    # cmd += timestep
-
-    # if percent > 0.0:
-    #     gpu_mem_opts = ['--gpu_memory_fraction', str(percent)] 
-    #     cmd += gpu_mem_opts
     
     if is_nvprof:
         nvprof_log = os.path.join(train_dir, 'nvprof_log.log')
@@ -169,7 +145,8 @@ def run(
     if is_single:
         # 1. we want to use nvprof once for single model and obtain metrics.
         nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, 
-            ['--timeout', str(60*2),'--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_write_transactions,dram_read_transactions,dram_utilization',])
+            ['--timeout', str(60*2),
+             '--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_write_transactions,dram_write_throughput,dram_read_transactions,dram_read_throughput,dram_utilization,flop_count_dp,',])
         while nvp.poll() is None:
             print("nvprof profiling metrics %s" % experiment_set[0])
             time.sleep(2)
