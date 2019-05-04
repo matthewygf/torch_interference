@@ -9,8 +9,8 @@ import logging
 import system_tracker as sys_track
 import numpy as np
 
-googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet']
-mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet']
+googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True']
+mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
                      '--csv',]
 models_train = {
