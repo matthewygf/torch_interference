@@ -89,8 +89,11 @@ def main(argv):
 
   model_fn = models_factory[FLAGS.model]
   dataset_fn = datasets_factory[FLAGS.dataset]
-
-  model = model_fn(pretrained=False, transform_input=False, aux_logits=False, num_classes=10)
+  if 'google' in FLAGS.model: 
+    model = model_fn(pretrained=False, transform_input=False, aux_logits=False, num_classes=10)
+  else:
+    model = model_fn(pretrained=False, num_classes=10)
+    
   compose_trans = transforms.Compose([
     transforms.ToTensor()
   ])

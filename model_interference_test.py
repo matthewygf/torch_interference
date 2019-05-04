@@ -9,13 +9,13 @@ import logging
 import system_tracker as sys_track
 import numpy as np
 
-googlenet_cmd = ['python', '--model', 'googlenet']
+googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet']
+mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
-                     '--timeout', str(60*2),
-                     '--csv',
-                    ]
+                     '--csv',]
 models_train = {
     'googlenet_cmd': googlenet_cmd,
+    'mobilenetv2_cmd': mobilenetv2_cmd,
     # 'mobilenet_v2_035_batch_16': mobile_net_v2_035_b16_cmd,
     # 'mobilenet_v1_025_batch_40': mobile_net_v1_025_cmd,
     # 'mobilenet_v1_025_batch_48': mobile_net_v1_025_b48_cmd,
@@ -77,8 +77,8 @@ def create_process(model_name, index, experiment_path, percent=0.0, is_nvprof=Fa
 
     cmd = models_train[model_name]
     curr_dir = os.path.abspath(os.path.dirname(__file__))
-    cmd += ['--dataset_dir', curr_dir]
-    cmd += ['--run_name', output_dir_name]
+    cmd = cmd + ['--dataset_dir', curr_dir]
+    cmd = cmd + ['--run_name', output_dir_name]
 
     # train_dir_path = '--train_dir' if 'word' not in model_name else '--save_path' 
     # simple_examples_data = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
@@ -111,6 +111,7 @@ def create_process(model_name, index, experiment_path, percent=0.0, is_nvprof=Fa
         if nvprof_args is not None:
             nv_prefix += nvprof_args
         cmd = nv_prefix + cmd
+    
     print(cmd)
     p = subprocess.Popen(cmd, stdout=out, stderr=err)
     return (p, out, err, err_out_file, output_dir)
@@ -167,7 +168,8 @@ def run(
 
     if is_single:
         # 1. we want to use nvprof once for single model and obtain metrics.
-        nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, ['--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_write_transactions,dram_read_transactions,dram_utilization',])
+        nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, 
+            ['--timeout', str(60*2),'--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_write_transactions,dram_read_transactions,dram_utilization',])
         while nvp.poll() is None:
             print("nvprof profiling metrics %s" % experiment_set[0])
             time.sleep(2)
@@ -268,17 +270,18 @@ def run(
              if smi_poll is None:
                 smi_p.kill()
                 smi_file.close()
+        
+        average_file.close()
+        sys_tracker.stop()
 
         prof_poll = prof_timeline.poll()
         while prof_poll is None:
-            time.sleep(5)
+            time.sleep(30)
             print("waiting for nvprof to finish.")
             prof_poll = prof_timeline.poll()
             prof_timeline.kill()
         print("nvprof finished")
         timeline_file.close()
-        average_file.close()
-        sys_tracker.stop()
 
     # Experiment average size.
     average_file = open(average_log, mode='a+')
@@ -291,7 +294,7 @@ def main():
     # which one we should run in parallel
     sets = [
             ['googlenet_cmd']
-
+            ['mobilenetv2_cmd']
             # ['ptb_word_lm', 'mobilenet_v1_025_batch_32', 'mobilenet_v1_025_batch_32'],
             # ['ptb_word_lm', 'ptb_word_lm', 'ptb_word_lm', 'ptb_word_lm'], 
             # ['ptb_word_lm', 'mobilenet_v1_025_batch_32', 'ptb_word_lm', 'mobilenet_v1_025_batch_32'],
