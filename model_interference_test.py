@@ -215,16 +215,16 @@ def run(
                                 (experiment_index, experiment_run, pid, mean, num))
                         average_file.write(line)
                     
-                    print("checking the time, process %d been running for %d " % (pid,executed))
-                    if executed >= 60.0 * 5 and poll is not None:
+                    #print("checking the time, process %d been running for %d " % (pid,executed))
+                    #if executed >= 60.0 * 10 and poll is not None:
                         # make sure we profile a few mins.
                         # to observe the interference
-                        p.kill()
-                        mean, num = kill_process_safe(pid, err, out, path, ids, accumulated_models, 
-                                                      mean_num_models, mean_time_p_steps, processes_list, err_logs, out_logs, start_times, err_file_paths, i)
-                        line = ("experiment set %d, experiment_run %d: %d process average num p step is %.4f and total number of step is: %d \n" % 
-                                    (experiment_index, experiment_run, pid, mean, num))
-                        average_file.write(line)
+                        #p.kill()
+                        #mean, num = kill_process_safe(pid, err, out, path, ids, accumulated_models, 
+                        #                              mean_num_models, mean_time_p_steps, processes_list, err_logs, out_logs, start_times, err_file_paths, i)
+                        #line = ("experiment set %d, experiment_run %d: %d process average num p step is %.4f and total number of step is: %d \n" % 
+                        #            (experiment_index, experiment_run, pid, mean, num))
+                        #average_file.write(line)
                         
 
                 smi_poll = smi_p.poll()
