@@ -34,7 +34,8 @@ flags.mark_flag_as_required('dataset_dir')
 models_factory = {
   'googlenet': models.googlenet,
   'mobilenet': models.mobilenet_v2,
-  'resnet': models.resnet50
+  'resnet': models.resnet50,
+  'vgg19': models.vgg19
 }
 
 datasets_factory = {
@@ -93,7 +94,7 @@ def main(argv):
     model = model_fn(pretrained=False, transform_input=False, aux_logits=False, num_classes=10)
   else:
     model = model_fn(pretrained=False, num_classes=10)
-    
+
   compose_trans = transforms.Compose([
     transforms.ToTensor()
   ])
