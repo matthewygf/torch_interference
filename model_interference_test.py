@@ -11,11 +11,13 @@ import numpy as np
 
 googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True']
 mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True']
+vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
                      '--csv',]
 models_train = {
     'googlenet_cmd': googlenet_cmd,
     'mobilenetv2_cmd': mobilenetv2_cmd,
+    'vgg19_cmd': vgg19_cmd,
     # 'mobilenet_v2_035_batch_16': mobile_net_v2_035_b16_cmd,
     # 'mobilenet_v1_025_batch_40': mobile_net_v1_025_cmd,
     # 'mobilenet_v1_025_batch_48': mobile_net_v1_025_b48_cmd,
@@ -90,7 +92,7 @@ def create_process(model_name, index, experiment_path, percent=0.0, is_nvprof=Fa
     
     print(cmd)
     p = subprocess.Popen(cmd, stdout=out, stderr=err)
-    return (p, out, err, err_out_file, output_dir)
+    return (p, out, err, output_file, output_dir)
 
 def kill_process_safe(pid, 
                       err_handle, 
@@ -145,7 +147,7 @@ def run(
     if is_single:
         # 1. we want to use nvprof once for single model and obtain metrics.
         nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, 
-            ['--timeout', str(60*2),
+            ['--timeout', str(60*3),
              '--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_write_transactions,dram_write_throughput,dram_read_transactions,dram_read_throughput,dram_utilization,flop_count_dp,',])
         while nvp.poll() is None:
             print("nvprof profiling metrics %s" % experiment_set[0])
@@ -161,7 +163,7 @@ def run(
         processes_list = []
         err_logs = []
         out_logs = []
-        err_file_paths = []
+        out_file_paths = []
         start_times = []
         ids = {}
         percent = (1 / len(experiment_set)) - 0.075 # some overhead of cuda stuff i think :/
@@ -172,7 +174,7 @@ def run(
             err_logs.append(err)
             out_logs.append(out)
             start_times.append(start_time)
-            err_file_paths.append(path)
+            out_file_paths.append(path)
             ids[p.pid] = i
         should_stop = False
         sys_tracker = sys_track.SystemInfoTracker(experiment_path)
@@ -200,7 +202,7 @@ def run(
                 if len(processes_list) <= 0:
                     should_stop = True
 
-                for i,(p, err, out, start_time, path) in enumerate(zip(processes_list, err_logs, out_logs, start_times, err_file_paths)):
+                for i,(p, err, out, start_time, path) in enumerate(zip(processes_list, err_logs, out_logs, start_times, out_file_paths)):
                     poll = None
                     pid = p.pid
                     poll = p.poll()
@@ -210,22 +212,10 @@ def run(
                         print('Process %d still running' % pid)
                     else:
                         mean, num = kill_process_safe(pid, err, out, path, ids, accumulated_models, 
-                                                      mean_num_models, mean_time_p_steps, processes_list, err_logs, out_logs, start_times, err_file_paths, i)
+                                                      mean_num_models, mean_time_p_steps, processes_list, err_logs, out_logs, start_times, out_file_paths, i)
                         line = ("experiment set %d, experiment_run %d: %d process average num p step is %.4f and total number of step is: %d \n" % 
                                 (experiment_index, experiment_run, pid, mean, num))
                         average_file.write(line)
-                    
-                    #print("checking the time, process %d been running for %d " % (pid,executed))
-                    #if executed >= 60.0 * 10 and poll is not None:
-                        # make sure we profile a few mins.
-                        # to observe the interference
-                        #p.kill()
-                        #mean, num = kill_process_safe(pid, err, out, path, ids, accumulated_models, 
-                        #                              mean_num_models, mean_time_p_steps, processes_list, err_logs, out_logs, start_times, err_file_paths, i)
-                        #line = ("experiment set %d, experiment_run %d: %d process average num p step is %.4f and total number of step is: %d \n" % 
-                        #            (experiment_index, experiment_run, pid, mean, num))
-                        #average_file.write(line)
-                        
 
                 smi_poll = smi_p.poll()
                 if smi_poll is None:
@@ -271,7 +261,14 @@ def main():
     # which one we should run in parallel
     sets = [
             ['googlenet_cmd'],
-            ['mobilenetv2_cmd']
+            ['mobilenetv2_cmd'],
+            ['vgg19_cmd'],
+            # ['googlenet_cmd', 'googlenet_cmd'],
+            # ['mobilenetv2_cmd', 'mobilenetv2_cmd'],
+            # ['googlenet_cmd', 'mobilenetv2_cmd'],
+            # ['vgg19_cmd', 'vgg19_cmd'],
+            # ['googlenet_cmd', 'vgg19_cmd'],
+            # ['mobilenetv2_cmd', 'vgg19_cmd'],
             # ['ptb_word_lm', 'mobilenet_v1_025_batch_32', 'mobilenet_v1_025_batch_32'],
             # ['ptb_word_lm', 'ptb_word_lm', 'ptb_word_lm', 'ptb_word_lm'], 
             # ['ptb_word_lm', 'mobilenet_v1_025_batch_32', 'ptb_word_lm', 'mobilenet_v1_025_batch_32'],
