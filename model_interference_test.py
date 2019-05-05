@@ -8,6 +8,7 @@ import time
 import logging
 import system_tracker as sys_track
 import numpy as np
+import copy
 
 googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True']
 mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True']
@@ -76,8 +77,8 @@ def create_process(model_name, index, experiment_path, percent=0.0, is_nvprof=Fa
 
     err = open(err_out_file, 'w+')
     out = open(output_file, 'w+')
-
-    cmd = models_train[model_name]
+    cmd = None
+    cmd = copy.deepcopy(models_train[model_name])
     curr_dir = os.path.abspath(os.path.dirname(__file__))
     cmd = cmd + ['--dataset_dir', curr_dir]
     cmd = cmd + ['--run_name', output_dir_name]
