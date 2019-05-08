@@ -264,17 +264,6 @@ def main():
             ['googlenet_cmd'],
             ['mobilenetv2_cmd'],
             ['vgg19_cmd'],
-            # ['googlenet_cmd', 'googlenet_cmd'],
-            # ['mobilenetv2_cmd', 'mobilenetv2_cmd'],
-            # ['googlenet_cmd', 'mobilenetv2_cmd'],
-            # ['vgg19_cmd', 'vgg19_cmd'],
-            # ['googlenet_cmd', 'vgg19_cmd'],
-            # ['mobilenetv2_cmd', 'vgg19_cmd'],
-            # ['ptb_word_lm', 'mobilenet_v1_025_batch_32', 'mobilenet_v1_025_batch_32'],
-            # ['ptb_word_lm', 'ptb_word_lm', 'ptb_word_lm', 'ptb_word_lm'], 
-            # ['ptb_word_lm', 'mobilenet_v1_025_batch_32', 'ptb_word_lm', 'mobilenet_v1_025_batch_32'],
-            # ['ptb_word_lm', 'ptb_word_lm', 'ptb_word_lm', 'mobilenet_v1_025_batch_32'], 
-            # ['ptb_word_lm', 'mobilenet_v1_025_batch_32', 'mobilenet_v1_025_batch_32', 'mobilenet_v1_025_batch_32']
            ]
     project_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     experiment_path = os.path.join(project_dir, 'experiment')

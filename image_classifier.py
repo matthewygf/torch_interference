@@ -1,7 +1,5 @@
 from absl import app
 from absl import flags
-import logging
-import sys
 # using predefined set of models
 import torchvision.models as models
 import torchvision.datasets as predefined_datasets
@@ -11,6 +9,8 @@ import torch
 import torch.optim as optim
 import time
 import ctypes
+
+import utils as U
     
 """
   NOTE: Only using 1 GPU
@@ -64,28 +64,10 @@ def train(logger, model, device, train_loader, optimizer, epoch, loss_op):
 def main(argv):
   del argv
   
-  logger = logging.getLogger(__name__+FLAGS.run_name)
-
-  formatter = logging.Formatter(
-    "%(asctime)s:%(filename)s:%(funcName)s:%(lineno)d-%(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-  )
-
-  handler = logging.StreamHandler(sys.stdout)
-  handler.setFormatter(formatter)
-  
-  if (logger.hasHandlers()):
-    logger.handlers.clear()
-  
-  logger.setLevel(logging.INFO)
-  logger.addHandler(handler)
-  logger.propagate = False
+  logger = U.get_logger(__name__+FLAGS.run_name)
   logger.info("run: %s, specified model: %s, dataset: %s", FLAGS.run_name, FLAGS.model, FLAGS.dataset)
-
-  try:
-    _cudart = ctypes.CDLL('libcudart.so')
-  except:
-    _cudart = None
+  _cudart = U.get_cudart()
+  if _cudart is None:
     logger.warning("No cudart, probably means you do not have cuda on this machine.")
 
   model_fn = models_factory[FLAGS.model]
