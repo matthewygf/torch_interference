@@ -14,7 +14,7 @@ googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use
 mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True']
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True']
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--task', 'pos', '--use_cuda', 'True']
-mt1_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--batch_size', '16' ,'--use_cuda', 'True']
+mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '64' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--batch_size', '16' ,'--use_cuda', 'True']
 mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--task', 'mt', '--batch_size', '16', '--use_cuda', 'True']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
                      '--csv',]
@@ -111,7 +111,7 @@ def kill_process_safe(pid,
     err_file_paths.pop(i)
     return mean, num
     
-_RUNS_PER_SET = 2
+_RUNS_PER_SET = 6
 _START = 1
 
 def run(
@@ -133,15 +133,16 @@ def run(
                               '--format=noheader,csv', '|', 'tee', '-a' , experiment_path+'/smi_watch.csv']
 
     if is_single:
-        # 1. we want to use nvprof once for single model and obtain metrics.
-        nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, 
-            ['--timeout', str(60*3),
-             '--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_write_transactions,dram_write_throughput,dram_read_transactions,dram_read_throughput,dram_utilization,flop_count_dp,',])
-        while nvp.poll() is None:
-            print("nvprof profiling metrics %s" % experiment_set[0])
-            time.sleep(2)
-        out.close()
-        err.close()
+        # 1. we want to use nvprof three times at least, make sure the metrics are correct
+        for metric_run in range(3):
+          nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, 
+              ['--timeout', str(60*3),
+              '--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_write_transactions,dram_write_throughput,dram_read_transactions,dram_read_throughput,dram_utilization,flop_count_dp,',])
+          while nvp.poll() is None:
+              print("nvprof profiling metrics %s" % experiment_set[0])
+              time.sleep(2)
+          out.close()
+          err.close()
         
     for experiment_run in range(_START, _START+_RUNS_PER_SET):
         if os.path.exists(average_log):
@@ -167,15 +168,18 @@ def run(
         should_stop = False
         sys_tracker = sys_track.SystemInfoTracker(experiment_path)
 
-        # 2. we should do a timeline profile.
-        if experiment_run == 1:
+        # 2. we should do timeline profile three times, just in case timeline was off .____.
+        if experiment_run <= 3:
             # nvprof timeline here
-            timeline_file_path = os.path.join(experiment_path, 'timeline_err.log')
+            timeline_file_path = os.path.join(experiment_path, str(experiment_run)+'-timeline_err.log')
             timeline_file = open(timeline_file_path, 'a+')
             timeline_prof_file = os.path.join(experiment_path, '%p_timeline')
             nvprof_all_cmd = ['nvprof', '--profile-all-processes', '--trace', 'gpu', '--timeout', str(30), '-o', timeline_prof_file ]
 
             prof_timeline = subprocess.Popen(nvprof_all_cmd, stdout=timeline_file, stderr=timeline_file)
+            prof_poll = None
+        else:
+            prof_timeline = None
             prof_poll = None
 
         try:
@@ -229,14 +233,15 @@ def run(
         average_file.close()
         sys_tracker.stop()
 
-        prof_poll = prof_timeline.poll()
-        while prof_poll is None:
-            time.sleep(30)
-            print("waiting for nvprof to finish.")
-            prof_poll = prof_timeline.poll()
-            prof_timeline.kill()
-        print("nvprof finished")
-        timeline_file.close()
+        if prof_timeline is not None:
+          prof_poll = prof_timeline.poll()
+          while prof_poll is None:
+              time.sleep(30)
+              print("waiting for nvprof to finish.")
+              prof_poll = prof_timeline.poll()
+              prof_timeline.kill()
+          print("nvprof finished")
+          timeline_file.close()
 
     # Experiment average size.
     average_file = open(average_log, mode='a+')

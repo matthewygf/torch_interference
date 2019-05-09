@@ -135,8 +135,8 @@ def main(argv):
                     iterator=iterator,
                     train_dataset=train_dataset,
                     validation_dataset=validation_dataset,
-                    patience=5,
-                    num_epochs=10,
+                    patience=3,
+                    num_epochs=8,
                     log_batch_size_period = 10,
                     cuda_device=cuda_device)
   try:
