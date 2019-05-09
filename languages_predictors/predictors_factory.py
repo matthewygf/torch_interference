@@ -1,15 +1,16 @@
-from allennlp.predictors import SentenceTaggerPredictor
+from allennlp.predictors import SentenceTaggerPredictor, SimpleSeq2SeqPredictor
 
 from languages_predictors import universal_eng_pos_predictor
 
 key_to_predictors = {
   'debug': SentenceTaggerPredictor,
-  'ud-eng': universal_eng_pos_predictor.UniversalEngPosPredictor
-
+  'ud-eng': universal_eng_pos_predictor.UniversalEngPosPredictor,
+  'nc_zhen': SimpleSeq2SeqPredictor
 }
 
 predict_logits = {
-  'pos': 'tag_logits'
+  'pos': 'tag_logits',
+  'nc_zhen': 'predicted_tokens'
 }
 
 def get_predictors(dataset_name, model, data_reader):

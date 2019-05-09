@@ -4,11 +4,13 @@ iterator_keys = {
   # this is implemented in pos_data_reader
   'debug': ('sentence', 'num_tokens'),
   # this is implemented in UniversalDependenciesDatasetReader
-  'ud-eng': ('words', 'num_tokens')
+  'ud-eng': ('words', 'num_tokens'),
+  'nc_zhen': ('source_tokens', 'num_tokens')
 }
 
 iterator_type = {
-  'ud-eng': BucketIterator
+  'ud-eng': BucketIterator,
+  'nc_zhen': BucketIterator
 }
 
 def get_iterator(dataset_name, batch_size=16):

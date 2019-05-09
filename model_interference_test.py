@@ -13,6 +13,8 @@ import copy
 googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True']
 mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True']
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True']
+pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--task', 'pos', '--use_cuda', 'True']
+mt_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--batch_size', '32' ,'--use_cuda', 'True']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
                      '--csv',]
 models_train = {

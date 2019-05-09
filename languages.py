@@ -9,21 +9,17 @@ import torch.optim as optim
 from allennlp.common.file_utils import cached_path
 
 # TODO: I am not sure how to use this PennTreeBank yet :/
-from allennlp.data.dataset_readers import PennTreeBankConstituencySpanDatasetReader, UniversalDependenciesDatasetReader
+from allennlp.data.dataset_readers import PennTreeBankConstituencySpanDatasetReader, UniversalDependenciesDatasetReader, Seq2SeqDatasetReader
 from allennlp.data.vocabulary import Vocabulary
 
-from allennlp.modules.attention import LinearAttention, BilinearAttention, DotProductAttention
-
-from allennlp.predictors import SentenceTaggerPredictor
-from allennlp.nn.activations import Activation
 from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
 
 from allennlp.models import Model
 
 from allennlp.training.trainer import Trainer
 
-from languages_data import pos_data_reader, embeddings_factory, iterators_factory, datasets_factory
-from language_models import models_factory
+from languages_data import pos_data_reader, embeddings_factory, iterators_factory, datasets_factory, preprocessing_factory
+from language_models import models_factory, datareader_cfg_factory
 from languages_predictors import predictors_factory
 
 import time
@@ -60,11 +56,13 @@ flags.mark_flag_as_required('dataset')
 data_reader_factory = {
   'debug': pos_data_reader.TaskDataReader,
   'ptb_tree': PennTreeBankConstituencySpanDatasetReader,
-  'ud-eng': UniversalDependenciesDatasetReader
+  'ud-eng': UniversalDependenciesDatasetReader,
+  'nc_zhen': Seq2SeqDatasetReader
 }
 
 test_sentences = {
   'debug' : 'I am your father',
+  'nc_zhen' : 'I am your father',
   'ud-eng': ['I', 'am', 'your', 'father']
 }
 
@@ -84,13 +82,26 @@ def main(argv):
   if _cudart is None:
     logger.warning("No cudart, probably means you do not have cuda on this machine.")
 
-  reader = data_reader_factory[FLAGS.dataset]()
+  cfgs = datareader_cfg_factory.get_datareader_configs(FLAGS.dataset)
+  if cfgs is not None:
+    reader = data_reader_factory[FLAGS.dataset](cfgs)
+  else:
+    reader = data_reader_factory[FLAGS.dataset]()
+
   dataset_paths = datasets_factory.get_dataset_paths(FLAGS.dataset)
+  # NOTE: check whether we need preprocessing, i.e. machine translation datasets
+  train_dataset = None
+  validation_dataset = None
+  if dataset_paths['train']['preprocess']:
+    # TODO: not yet ready. .___.
+    preprocessor = preprocessing_factory.get_preprocessor(FLAGS.dataset)
+  
   cache_dataset_dir = os.path.join(FLAGS.dataset_dir, FLAGS.dataset)
-  train_dataset = reader.read(cached_path(dataset_paths['train'], cache_dataset_dir))
+  # TODO: If there is multiple paths to make one huge dataset, we should do it with the preprocessor
+  train_dataset = reader.read(cached_path(dataset_paths['train']['paths'][0], cache_dataset_dir))
   validation_dataset = None
   if dataset_paths['val'] is not None:
-    validation_dataset = reader.read(cached_path(dataset_paths['val'], cache_dataset_dir))
+    validation_dataset = reader.read(cached_path(dataset_paths['val']['paths'][0], cache_dataset_dir))
   
   vocab = Vocabulary.from_instances(
                 train_dataset + validation_dataset, max_vocab_size=FLAGS.max_vocabs)
@@ -104,7 +115,7 @@ def main(argv):
     'input_dims': FLAGS.embeddings_dim,
     'hidden_dims': FLAGS.hiddens_dim,
     'batch_first': True,
-    'dataset_name': FLAGS.dataset
+    'dataset_name': FLAGS.dataset,
   }
 
   out_feature_key, model = models_factory.get_model_fn(**models_args)
