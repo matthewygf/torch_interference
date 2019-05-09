@@ -14,8 +14,8 @@ googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use
 mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True']
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True']
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--task', 'pos', '--use_cuda', 'True']
-mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '64' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--batch_size', '16' ,'--use_cuda', 'True']
-mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--task', 'mt', '--batch_size', '16', '--use_cuda', 'True']
+mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '32', '--hiddens_dim', '32' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--batch_size', '16' ,'--use_cuda', 'True']
+mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', '--embeddings_dim', '32', '--hiddens_dim', '32',  'nc_zhen', '--task', 'mt', '--batch_size', '16', '--use_cuda', 'True']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
                      '--csv',]
 models_train = {

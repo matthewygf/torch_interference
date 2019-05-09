@@ -53,8 +53,8 @@ def get_model_fn(model_name, embeddings, vocab, input_dims=128, hidden_dims=128,
       [
         input_dims,
         hidden_dims,
-        128,
-        128,
+        input_dims,
+        input_dims,
         1,
         3,
         # TODO: add more if you need.
