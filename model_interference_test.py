@@ -14,8 +14,8 @@ googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use
 mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True']
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True']
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--task', 'pos', '--use_cuda', 'True']
-mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '128', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--batch_size', '8' ,'--use_cuda', 'True']
-mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', '--embeddings_dim', '128', '--hiddens_dim', '128',  'nc_zhen', '--task', 'mt', '--batch_size', '8', '--use_cuda', 'True']
+mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '128', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '50000', '--batch_size', '32' ,'--use_cuda', 'True']
+mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', '--embeddings_dim', '128', '--hiddens_dim', '128',  'nc_zhen', '--task', 'mt', '--max_vocabs', '50000','--batch_size', '32', '--use_cuda', 'True']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
                      '--csv',]
 models_train = {
@@ -253,8 +253,25 @@ def run(
 def main():
     # which one we should run in parallel
     sets = [
+            ['googlenet_cmd'],
+            ['mobilenetv2_cmd'],
+            ['vgg19_cmd'],
+            ['pos_cmd'],
             ['mt1_cmd'],
             ['mt2_cmd'],
+            ['googlenet_cmd','googlenet_cmd'],
+            ['mobilenetv2_cmd','mobilenetv2_cmd'],
+            ['vgg19_cmd', 'vgg19_cmd'],
+            ['pos_cmd', 'pos_cmd'],
+            ['mt1_cmd','mt1_cmd'],
+            ['googlenet_cmd', 'mobilenetv2_cmd'],
+            ['googlenet_cmd', 'vgg19_cmd'],
+            ['googlenet_cmd', 'pos_cmd'],
+            ['googlenet_cmd', 'mt1_cmd'],
+            ['mobilenetv2_cmd', 'vgg19_cmd'],
+            ['mobilenetv2_cmd', 'pos_cmd'],
+            ['mobilenetv2_cmd', 'mt1_cmd'],
+	          ['mobilenetv2_cmd', 'mt2_cmd'] 
            ]
     project_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     experiment_path = os.path.join(project_dir, 'experiment')
