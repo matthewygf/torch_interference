@@ -25,25 +25,6 @@ models_train = {
     'pos_cmd': pos_cmd,
     'mt1_cmd': mt1_cmd,
     'mt2_cmd': mt2_cmd,
-    # 'mobilenet_v2_035_batch_16': mobile_net_v2_035_b16_cmd,
-    # 'mobilenet_v1_025_batch_40': mobile_net_v1_025_cmd,
-    # 'mobilenet_v1_025_batch_48': mobile_net_v1_025_b48_cmd,
-    # 'mobilenet_v1_025_batch_32': mobile_net_v1_025_b32_cmd,
-    # 'ptb_word_lm': ptb_word_lm_cmd,
-    # 'nasnet_batch_8': nasnet_b8_cmd,
-    # 'resnet_50_batch8_cmd': resnet_50_b8_cmd,
-    # 'resnet_v1_50_batch_8': resnet_50_v1_b8_cmd,
-    # 'resnet_v1_50_batch_16': resnet_50_v1_b16_cmd,
-    # 'vgg19_batch_8': vgg_19_b8_cmd,
-    # 'vgg16_batch_8': vgg_16_b8_cmd,
-    # 'alexnet_v2_batch_8': alexnet_v2_b8_cmd,
-    # 'inceptionv1_batch_8': inception_v1_b8_cmd,
-    # 'inceptionv2_batch_8': inception_v2_b8_cmd,
-    # 'inceptionv3_batch_8': inception_v3_b8_cmd,
-    # 'inceptionv4_batch_8': inception_v4_b8_cmd,
-    # 'resnet_101_v1_batch_8': resnet_101_v1_b8_cmd,
-    # 'resnet_151_v1_batch_8': resnet_152_v1_b8_cmd,
-    # 'debug': debug_cmd,
     'nvprof_prefix': nvprof_prefix_cmd
 }
 
@@ -285,7 +266,7 @@ def main():
             ['mobilenetv2_cmd', 'vgg19_cmd'],
             ['mobilenetv2_cmd', 'pos_cmd'],
             ['mobilenetv2_cmd', 'mt1_cmd'],
-	    ['mobilenetv2_cmd', 'mt2_cmd'] 
+	          ['mobilenetv2_cmd', 'mt2_cmd'] 
            ]
     project_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     experiment_path = os.path.join(project_dir, 'experiment')
