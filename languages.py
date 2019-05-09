@@ -129,7 +129,7 @@ def main(argv):
   iterator = iterators_factory.get_iterator(FLAGS.dataset, FLAGS.batch_size)
 
   iterator.index_with(vocab)
-
+  cuda_device = 0 if FLAGS.use_cuda else -1
   trainer = Trainer(model=model,
                     optimizer=optimizer,
                     iterator=iterator,
@@ -137,7 +137,8 @@ def main(argv):
                     validation_dataset=validation_dataset,
                     patience=5,
                     num_epochs=10,
-                    log_batch_size_period = 10)
+                    log_batch_size_period = 10,
+                    cuda_device=cuda_device)
   try:
     status = None
     if _cudart:
