@@ -154,9 +154,12 @@ def main(argv):
   pred_logits_key = predictors_factory.get_logits_key(FLAGS.task)
   if pred_logits_key is not None:
    pred_logits = pred_logits[pred_logits_key]
-
-  top_ids = np.argmax(pred_logits, axis=-1)
-  print([model.vocab.get_token_from_index(i, out_feature_key) for i in top_ids])
+   
+  if FLAGS.task == 'pos':
+    top_ids = np.argmax(pred_logits, axis=-1)
+    print([model.vocab.get_token_from_index(i, out_feature_key) for i in top_ids])
+  else:
+    print(pred_logits)
 
 if __name__ == "__main__":
   app.run(main)

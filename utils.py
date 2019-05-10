@@ -11,7 +11,7 @@ def get_logger(name):
     datefmt="%Y-%m-%d %H:%M:%S"
   )
 
-  handler = logging.StreamHandler(sys.stdout)
+  handler = logging.StreamHandler(sys.stderr)
   handler.setFormatter(formatter)
 
   if (logger.hasHandlers()):

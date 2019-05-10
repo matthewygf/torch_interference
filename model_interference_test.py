@@ -15,7 +15,7 @@ mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--u
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True']
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--task', 'pos', '--use_cuda', 'True']
 mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '128', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '50000', '--batch_size', '32' ,'--use_cuda', 'True']
-mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', '--embeddings_dim', '128', '--hiddens_dim', '128',  'nc_zhen', '--task', 'mt', '--max_vocabs', '50000','--batch_size', '32', '--use_cuda', 'True']
+mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '128', '--hiddens_dim', '128',  '--task', 'mt', '--max_vocabs', '50000','--batch_size', '32', '--use_cuda', 'True']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
                      '--csv',]
 models_train = {
@@ -80,7 +80,7 @@ def create_process(model_name, index, experiment_path, percent=0.0, is_nvprof=Fa
     
     print(cmd)
     p = subprocess.Popen(cmd, stdout=out, stderr=err)
-    return (p, out, err, output_file, output_dir)
+    return (p, out, err, err_out_file, output_dir)
 
 def kill_process_safe(pid, 
                       err_handle, 
@@ -174,7 +174,7 @@ def run(
             timeline_file_path = os.path.join(experiment_path, str(experiment_run)+'-timeline_err.log')
             timeline_file = open(timeline_file_path, 'a+')
             timeline_prof_file = os.path.join(experiment_path, '%p_timeline')
-            nvprof_all_cmd = ['nvprof', '--profile-all-processes', '--trace', 'gpu', '--timeout', str(30), '-o', timeline_prof_file ]
+            nvprof_all_cmd = ['nvprof', '--profile-all-processes', '--trace', 'gpu', '-o', timeline_prof_file ]
 
             prof_timeline = subprocess.Popen(nvprof_all_cmd, stdout=timeline_file, stderr=timeline_file)
             prof_poll = None

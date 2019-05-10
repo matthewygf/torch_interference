@@ -100,7 +100,8 @@ def main(argv):
     else:
       status = None
     
-    for epoch in range(1, 6):
+    # 3 epochs
+    for epoch in range(1, 4):
       train(logger, model, device, train_loader, optimizer, epoch, loss_op)
   finally:
     if status == 0:
