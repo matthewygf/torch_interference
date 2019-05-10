@@ -73,7 +73,7 @@ def create_process(model_name, index, experiment_path, percent=0.0, is_nvprof=Fa
     
     if is_nvprof:
         nvprof_log = os.path.join(train_dir, 'nvprof_log.log')
-        nv_prefix = models_train['nvprof_prefix']
+        nv_prefix = copy.deepcopy(models_train['nvprof_prefix'])
         nv_prefix += ['--log-file', nvprof_log]
         if nvprof_args is not None:
             nv_prefix += nvprof_args
