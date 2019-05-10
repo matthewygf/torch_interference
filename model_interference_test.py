@@ -184,7 +184,7 @@ def run(
             prof_poll = None
 
         try:
-            smi_file_path = os.path.join(experiment_path, 'smi_out.log') 
+            smi_file_path = os.path.join(experiment_path, str(experiment_run)+'smi_out.log') 
             smi_file = open(smi_file_path, 'a+')
             
             smi_p = subprocess.Popen(nvidia_smi_cmd, stdout=smi_file, stderr=smi_file)
