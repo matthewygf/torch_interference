@@ -14,8 +14,8 @@ googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use
 mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True']
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True']
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--task', 'pos', '--use_cuda', 'True']
-mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '128', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '50000', '--batch_size', '32' ,'--use_cuda', 'True']
-mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '128', '--hiddens_dim', '128',  '--task', 'mt', '--max_vocabs', '50000','--batch_size', '32', '--use_cuda', 'True']
+mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '128', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '35000', '--batch_size', '32' ,'--use_cuda', 'True']
+mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '128', '--hiddens_dim', '128',  '--task', 'mt', '--max_vocabs', '35000','--batch_size', '32', '--use_cuda', 'True']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
                      '--csv',]
 models_train = {
@@ -136,8 +136,8 @@ def run(
         # 1. we want to use nvprof three times at least, make sure the metrics are correct
         for metric_run in range(3):
           nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, 
-              ['--timeout', str(60*4),
-              '--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_utilization,sysmem_utilization,flop_dp_efficiency,flop_sp_efficiency',])
+              ['--timeout', str(60*5),
+               '--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_utilization,sysmem_utilization,flop_dp_efficiency,flop_sp_efficiency',])
           while nvp.poll() is None:
               print("nvprof profiling metrics %s" % experiment_set[0])
               time.sleep(2)

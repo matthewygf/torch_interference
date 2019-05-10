@@ -135,8 +135,7 @@ def main(argv):
                     iterator=iterator,
                     train_dataset=train_dataset,
                     validation_dataset=validation_dataset,
-                    patience=2,
-                    num_epochs=3,
+                    num_epochs=1,
                     log_batch_size_period = 10,
                     cuda_device=cuda_device)
   try:
@@ -154,7 +153,7 @@ def main(argv):
   pred_logits_key = predictors_factory.get_logits_key(FLAGS.task)
   if pred_logits_key is not None:
    pred_logits = pred_logits[pred_logits_key]
-   
+
   if FLAGS.task == 'pos':
     top_ids = np.argmax(pred_logits, axis=-1)
     print([model.vocab.get_token_from_index(i, out_feature_key) for i in top_ids])
