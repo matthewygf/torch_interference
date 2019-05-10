@@ -136,8 +136,8 @@ def run(
         # 1. we want to use nvprof three times at least, make sure the metrics are correct
         for metric_run in range(3):
           nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, 
-              ['--timeout', str(60*3),
-              '--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_write_transactions,dram_write_throughput,dram_read_transactions,dram_read_throughput,dram_utilization,flop_count_dp,',])
+              ['--timeout', str(60*4),
+              '--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_utilization,sysmem_utilization,flop_dp_efficiency,flop_sp_efficiency',])
           while nvp.poll() is None:
               print("nvprof profiling metrics %s" % experiment_set[0])
               time.sleep(2)
