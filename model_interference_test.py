@@ -264,7 +264,6 @@ def main():
             ['mobilenetv2_cmd','mobilenetv2_cmd'],
             ['vgg19_cmd', 'vgg19_cmd'],
             ['pos_cmd', 'pos_cmd'],
-            ['mt1_cmd','mt1_cmd'],
             ['googlenet_cmd', 'mobilenetv2_cmd'],
             ['googlenet_cmd', 'vgg19_cmd'],
             ['googlenet_cmd', 'pos_cmd'],
