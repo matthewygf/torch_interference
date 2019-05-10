@@ -43,6 +43,7 @@ flags.DEFINE_integer('hiddens_dim', 128, 'Embedding dimension to use')
 flags.DEFINE_boolean('use_cuda', False, 'whether to use GPU')
 flags.DEFINE_integer('log_interval', 10, 'Batch intervals to log')
 flags.DEFINE_integer('batch_size', 16, 'Batch intervals to log')
+flags.DEFINE_integer('max_epochs', 1, 'max epoch number to run')
 flags.DEFINE_integer('max_vocabs', 100000, 'Maximum number of vocabulary')
 flags.DEFINE_string('optimizer', 'adam', 'Gradient descent optimizer')
 #TODO: DATA PARALLEL / MODEL PARALLEL
@@ -135,7 +136,7 @@ def main(argv):
                     iterator=iterator,
                     train_dataset=train_dataset,
                     validation_dataset=validation_dataset,
-                    num_epochs=1,
+                    num_epochs=FLAGS.max_epochs,
                     log_batch_size_period = 10,
                     cuda_device=cuda_device)
   try:
