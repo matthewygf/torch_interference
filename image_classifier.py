@@ -11,7 +11,11 @@ import time
 import ctypes
 
 import utils as U
-    
+
+torch.manual_seed(0)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 """
   NOTE: Only using 1 GPU
   TODO: 4 GPUs job packing
@@ -93,7 +97,7 @@ def main(argv):
   model = model.to(device)
   optimizer = optim.Adam(model.parameters(), lr=0.0001)
   loss_op = torch.nn.CrossEntropyLoss()
-
+  start_time = time.time()
   try:
     if _cudart is not None:
       status = _cudart.cudaProfilerStart()
@@ -106,7 +110,8 @@ def main(argv):
   finally:
     if status == 0:
       _cudart.cudaProfilerStop()
-
+  final_time = time.time() - start_time
+  logger.info("Finished: ran for %d secs", final_time)
 if __name__ == "__main__":
   app.run(main)
 

@@ -31,6 +31,12 @@ from urllib.parse import urlparse
 
 import copy
 
+torch.manual_seed(0)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
+np.random.seed(0)
+
 FLAGS = flags.FLAGS
 flags.DEFINE_string('model', None, 'The model architecture you want to test')
 flags.DEFINE_string('run_name', None, 'The name you want to give to this run')
@@ -139,6 +145,8 @@ def main(argv):
                     num_epochs=FLAGS.max_epochs,
                     log_batch_size_period = 10,
                     cuda_device=cuda_device)
+
+  start_time = time.time()
   try:
     status = None
     if _cudart:
@@ -160,6 +168,8 @@ def main(argv):
     print([model.vocab.get_token_from_index(i, out_feature_key) for i in top_ids])
   else:
     print(pred_logits)
-
+  final_time = time.time() - start_time
+  logger.info("Finished: ran for %d secs", final_time)
+  
 if __name__ == "__main__":
   app.run(main)

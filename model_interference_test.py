@@ -112,7 +112,7 @@ def kill_process_safe(pid,
     err_file_paths.pop(i)
     return mean, num
     
-_RUNS_PER_SET = 6
+_RUNS_PER_SET = 10
 _START = 1
 
 def run(
@@ -134,7 +134,7 @@ def run(
         # 1. we want to use nvprof three times at least, make sure the metrics are correct
         for metric_run in range(3):
           nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, 
-              ['--timeout', str(60*5),
+              ['--timeout', str(60*10),
                '--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_utilization,sysmem_utilization,flop_dp_efficiency,flop_sp_efficiency',])
           while nvp.poll() is None:
               print("nvprof profiling metrics %s" % experiment_set[0])
@@ -167,7 +167,7 @@ def run(
         sys_tracker = sys_track.SystemInfoTracker(experiment_path)
 
         # 2. we should do timeline profile three times, just in case timeline was off .____.
-        if experiment_run <= 3:
+        if experiment_run <= 5:
             # nvprof timeline here
             timeline_file_path = os.path.join(experiment_path, str(experiment_run)+'-timeline_err.log')
             timeline_file = open(timeline_file_path, 'a+')
@@ -255,23 +255,23 @@ def run(
 def main():
     # which one we should run in parallel
     sets = [
-            # ['googlenet_cmd'],
-            # ['mobilenetv2_cmd'],
-            # ['vgg19_cmd'],
-            # ['pos_cmd'],
-            # ['mt1_cmd'],
+            ['googlenet_cmd'],
+            ['mobilenetv2_cmd'],
+            ['vgg19_cmd'],
+            ['pos_cmd'],
+            ['mt1_cmd'],
             ['mt2_cmd'],
-            # ['googlenet_cmd','googlenet_cmd'],
-            # ['mobilenetv2_cmd','mobilenetv2_cmd'],
-            # ['vgg19_cmd', 'vgg19_cmd'],
-            # ['pos_cmd', 'pos_cmd'],
-            # ['googlenet_cmd', 'mobilenetv2_cmd'],
-            # ['googlenet_cmd', 'vgg19_cmd'],
-            # ['googlenet_cmd', 'pos_cmd'],
-            # ['googlenet_cmd', 'mt1_cmd'],
-            # ['mobilenetv2_cmd', 'vgg19_cmd'],
-            # ['mobilenetv2_cmd', 'pos_cmd'],
-            # ['mobilenetv2_cmd', 'mt1_cmd'],
+            ['googlenet_cmd','googlenet_cmd'],
+            ['mobilenetv2_cmd','mobilenetv2_cmd'],
+            ['vgg19_cmd', 'vgg19_cmd'],
+            ['pos_cmd', 'pos_cmd'],
+            ['googlenet_cmd', 'mobilenetv2_cmd'],
+            ['googlenet_cmd', 'vgg19_cmd'],
+            ['googlenet_cmd', 'pos_cmd'],
+            ['googlenet_cmd', 'mt1_cmd'],
+            ['mobilenetv2_cmd', 'vgg19_cmd'],
+            ['mobilenetv2_cmd', 'pos_cmd'],
+            ['mobilenetv2_cmd', 'mt1_cmd'],
 	          ['mobilenetv2_cmd', 'mt2_cmd'] 
            ]
     project_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
