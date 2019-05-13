@@ -263,7 +263,6 @@ def main():
             ['mt2_cmd'],
             ['googlenet_cmd','googlenet_cmd'],
             ['mobilenetv2_cmd','mobilenetv2_cmd'],
-            ['vgg19_cmd', 'vgg19_cmd'],
             ['pos_cmd', 'pos_cmd'],
             ['googlenet_cmd', 'mobilenetv2_cmd'],
             ['googlenet_cmd', 'vgg19_cmd'],
@@ -282,6 +281,34 @@ def main():
         experiment_file = os.path.join(experiment_path, 'experiment.log')
 
         run(experiment_file, current_experiment_path, ex, len(sets), experiment_index)
+    
+    # convert the nvprof files
+    for dirpath, dirs, files in os.walk(project_dir):
+      for filename in files:
+        if "_timeline" in filename and 'experiment' in dirpath:
+          timeline_path = os.path.join(dirpath, filename)
+          nvprof_dirs = os.path.join(project_dir, 'nvprof_conv')
+          if not os.path.exists(nvprof_dirs):
+            os.makedirs(nvprof_dirs)
+          out_log = os.path.join(nvprof_dirs, 'convs.log')
+          new_timeline_path = os.path.join(nvprof_dirs, filename+"_conv.csv")
+          with open(out_log, 'a+') as outlogs_handle:
+            conv_p = subprocess.Popen(['nvprof', '--print-gpu-trace', '--csv', '-i', timeline_path, '--log-file', new_timeline_path], stderr=outlogs_handle, stdout=outlogs_handle)
+            while conv_p.poll() is None:
+              time.sleep(30)
+            print("done converting %s" % timeline_path)
+            # clean "==="
+            path_dir = int(os.path.basename(os.path.dirname(new_timeline_path)))
+            new_name = ":".join(sets[path_dir])
+            clean_timeline_path = os.path.join(nvprof_dirs, filename+"_"+new_name+"_new.csv")
+            with open(new_timeline_path, 'r') as org_newtimeline:
+              with open(clean_timeline_path, 'a+') as clean_newtimeline:
+                for line in org_newtimeline:
+                  if "===" in line: continue
+                  clean_newtimeline.write(line)
+          os.remove(timeline_path)
+          os.remove(new_timeline_path)
+
 if __name__ == "__main__":
     main()
         
