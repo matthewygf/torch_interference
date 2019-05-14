@@ -112,7 +112,7 @@ def kill_process_safe(pid,
     err_file_paths.pop(i)
     return mean, num
     
-_RUNS_PER_SET = 10
+_RUNS_PER_SET = 20
 _START = 1
 
 def run(
@@ -167,7 +167,7 @@ def run(
         sys_tracker = sys_track.SystemInfoTracker(experiment_path)
 
         # 2. we should do timeline profile three times, just in case timeline was off .____.
-        if experiment_run <= 5:
+        if experiment_run <= int(_RUNS_PER_SET / 2):
             # nvprof timeline here
             timeline_file_path = os.path.join(experiment_path, str(experiment_run)+'-timeline_err.log')
             timeline_file = open(timeline_file_path, 'a+')
@@ -254,6 +254,7 @@ def run(
     
 def main():
     # which one we should run in parallel
+    # TODO: randomly start each process.
     sets = [
             ['googlenet_cmd'],
             ['mobilenetv2_cmd'],
@@ -306,7 +307,6 @@ def main():
                 for line in org_newtimeline:
                   if "===" in line: continue
                   clean_newtimeline.write(line)
-          os.remove(timeline_path)
           os.remove(new_timeline_path)
 
 if __name__ == "__main__":

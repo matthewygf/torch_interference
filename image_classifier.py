@@ -9,7 +9,8 @@ import torch
 import torch.optim as optim
 import time
 import ctypes
-
+import csv
+import datetime
 import utils as U
 
 torch.manual_seed(0)
@@ -48,7 +49,7 @@ datasets_factory = {
 
 def train(logger, model, device, train_loader, optimizer, epoch, loss_op):
   model.train()
-
+  epoch_start = time.time()
   for batch_idx, (data, target) in enumerate(train_loader):
     data, target = data.to(device), target.to(device)
     optimizer.zero_grad()
@@ -58,6 +59,12 @@ def train(logger, model, device, train_loader, optimizer, epoch, loss_op):
     loss.backward()
     optimizer.step()
     time_elapsed = time.time() - start_time
+    if batch_idx == 0:
+      logger.info("First step of this epoch: %s", str(datetime.datetime.utcnow()))
+    
+    if batch_idx == len(train_loader) - 1:
+      epoch_elapsed = time.time() - epoch_start
+      logger.info("Last step of this epoch: %s, ran for %.4f", str(datetime.datetime.utcnow()), epoch_elapsed)
 
     if batch_idx % FLAGS.log_interval == 0:
       logger.info("Epoch %d: %d/%d [Loss: %.4f] (%.4f sec/step)", 
@@ -91,7 +98,6 @@ def main(argv):
                             batch_size=FLAGS.batch_size, 
                             shuffle=True, 
                             num_workers=2)
-
   device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
 
   model = model.to(device)
@@ -103,7 +109,6 @@ def main(argv):
       status = _cudart.cudaProfilerStart()
     else:
       status = None
-    
     # 3 epochs
     for epoch in range(1, 4):
       train(logger, model, device, train_loader, optimizer, epoch, loss_op)
