@@ -130,7 +130,7 @@ def main(argv):
     'batch_first': True,
     'dataset_name': FLAGS.dataset,
     'dropout': FLAGS.drop_out,
-    'bidirectional': FLAGS.bidrectional,
+    'bidirectional': FLAGS.bidirectional,
     'max_len': FLAGS.max_len
   }
 
