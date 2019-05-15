@@ -9,14 +9,17 @@ import logging
 import system_tracker as sys_track
 import numpy as np
 import copy
+import models_to_run
 
-googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True']
-mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True']
-vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True']
+googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True', '--max_epochs', '8']
+mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True', '--max_epochs', '8']
+vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '8']
+resnet_cmd = ['python', 'image_classifier.py', '--model', 'resnet', '--use_cuda', 'True', '--max_epochs', '8']
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '2', '--task', 'pos', '--use_cuda', 'True']
 # NOTE: these mt tasks aren't very good , feel free to tune.
 mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '128', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '35000', '--batch_size', '32' ,'--use_cuda', 'True']
 mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '128', '--hiddens_dim', '128',  '--task', 'mt', '--max_vocabs', '35000','--batch_size', '32', '--use_cuda', 'True']
+
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
                      '--csv',]
 models_train = {
@@ -255,25 +258,7 @@ def run(
 def main():
     # which one we should run in parallel
     # TODO: randomly start each process.
-    sets = [
-            ['googlenet_cmd'],
-            ['mobilenetv2_cmd'],
-            ['vgg19_cmd'],
-            ['pos_cmd'],
-            ['mt1_cmd'],
-            ['mt2_cmd'],
-            ['googlenet_cmd','googlenet_cmd'],
-            ['mobilenetv2_cmd','mobilenetv2_cmd'],
-            ['pos_cmd', 'pos_cmd'],
-            ['googlenet_cmd', 'mobilenetv2_cmd'],
-            ['googlenet_cmd', 'vgg19_cmd'],
-            ['googlenet_cmd', 'pos_cmd'],
-            ['googlenet_cmd', 'mt1_cmd'],
-            ['mobilenetv2_cmd', 'vgg19_cmd'],
-            ['mobilenetv2_cmd', 'pos_cmd'],
-            ['mobilenetv2_cmd', 'mt1_cmd'],
-	          ['mobilenetv2_cmd', 'mt2_cmd'] 
-           ]
+    sets = copy.deepcopy(models_to_run.sets)
     project_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     experiment_path = os.path.join(project_dir, 'experiment')
 
