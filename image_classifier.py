@@ -31,6 +31,7 @@ flags.DEFINE_integer('batch_size', 64, 'Batch size of the model training')
 flags.DEFINE_string('dataset', 'cifar10', 'The dataset to train with')
 flags.DEFINE_boolean('use_cuda', False, 'whether to use GPU')
 flags.DEFINE_integer('log_interval', 10, 'Batch intervals to log')
+flags.DEFINE_integer('max_epochs', 5, 'maximum number of epochs to run')
 
 flags.mark_flag_as_required('run_name')
 flags.mark_flag_as_required('model')
@@ -71,7 +72,6 @@ def train(logger, model, device, train_loader, optimizer, epoch, loss_op):
                   epoch, batch_idx*len(data), 
                   len(train_loader.dataset), loss.item(), time_elapsed)
 
-
 def main(argv):
   del argv
   
@@ -109,8 +109,7 @@ def main(argv):
       status = _cudart.cudaProfilerStart()
     else:
       status = None
-    # 3 epochs
-    for epoch in range(1, 4):
+    for epoch in range(1, FLAGS.max_epochs+1):
       train(logger, model, device, train_loader, optimizer, epoch, loss_op)
   finally:
     if status == 0:
