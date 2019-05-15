@@ -131,7 +131,7 @@ def main(argv):
     'dataset_name': FLAGS.dataset,
     'dropout': FLAGS.drop_out,
     'bidirectional': FLAGS.bidirectional,
-    'max_len': FLAGS.max_len
+    'max_len': FLAGS.max_len,
   }
 
   out_feature_key, model = models_factory.get_model_fn(**models_args)
@@ -168,7 +168,7 @@ def main(argv):
   # TODO: VERY ROUGH.
   if FLAGS.task == 'lm':
     for _ in range(50):
-      tokens, _ = model.generate()
+      tokens, _ = model.generate(device)
     logger.info("GENERATED WORDS:")
     logger.info(''.join(token.text for token in tokens))
   else:

@@ -35,7 +35,7 @@ class GenerativeSeqModel(Model):
     loss = sequence_cross_entropy_with_logits(out_logits, output_tokens['tokens'], mask)
     return {'loss': loss}
   
-  def generate(self) -> Tuple[List[Token], torch.Tensor]:
+  def generate(self, device) -> Tuple[List[Token], torch.Tensor]:
     start_symbol_index = self.vocab.get_token_index(START_SYMBOL, 'tokens')
     end_symbol_index = self.vocab.get_token_index(END_SYMBOL, 'tokens')
     padding_symbol_index = self.vocab.get_token_index(DEFAULT_PADDING_TOKEN, 'tokens')
@@ -48,7 +48,7 @@ class GenerativeSeqModel(Model):
     log_likihood = 0.
     words = []
     for i in range(self.max_len):
-      tokens = torch.tensor([[word_idx]])
+      tokens = torch.tensor([[word_idx]]).to(device)
       embeddings = self.embeddings({'tokens': tokens})
       output, state = self.encoder._module(embeddings, state)
       output = self.hidden2out(output)

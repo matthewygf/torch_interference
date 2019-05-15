@@ -20,7 +20,7 @@ pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '
 mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '128', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '35000', '--batch_size', '32' ,'--use_cuda', 'True']
 mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '128', '--hiddens_dim', '128',  '--task', 'mt', '--max_vocabs', '35000','--batch_size', '32', '--use_cuda', 'True']
 # NOTE: language model need some tuning too.
-lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '80', '--hiddens_dim', '128', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '32', '--max_epochs', '3']
+lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '50', '--hiddens_dim', '128', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '32', '--max_epochs', '3']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
                      '--csv',]
 models_train = {
