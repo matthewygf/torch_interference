@@ -53,7 +53,7 @@ flags.DEFINE_integer('max_epochs', 1, 'max epoch number to run')
 flags.DEFINE_integer('max_vocabs', 100000, 'Maximum number of vocabulary')
 flags.DEFINE_string('optimizer', 'adam', 'Gradient descent optimizer')
 flags.DEFINE_float('drop_out', 0., 'dropout rate, if it is RNN base: for outputs of each RNN layer except the last layer')
-flags.DEFINE_boolean('bidrectional', False, 'if it is RNNbase, whether it becomes bidirectional RNN')
+flags.DEFINE_boolean('bidirectional', False, 'if it is RNNbase, whether it becomes bidirectional RNN')
 flags.DEFINE_integer('max_len', 40, 'maximum length to generate tokens')
 #TODO: DATA PARALLEL / MODEL PARALLEL
 
