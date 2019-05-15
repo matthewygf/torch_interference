@@ -42,8 +42,8 @@ class GenerativeSeqModel(Model):
 
     word_idx = start_symbol_index
     # TODO: many ways to init state.
-    state = (torch.zeros(1,1, self.hidden_size),
-              torch.zeros(1,1, self.hidden_size))
+    state = (torch.zeros(2, 1, self.hidden_size).to(device),
+             torch.zeros(2, 1, self.hidden_size).to(device))
     
     log_likihood = 0.
     words = []
