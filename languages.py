@@ -9,7 +9,7 @@ import torch.optim as optim
 from allennlp.common.file_utils import cached_path
 
 # TODO: I am not sure how to use this PennTreeBank yet :/
-from allennlp.data.dataset_readers import PennTreeBankConstituencySpanDatasetReader, UniversalDependenciesDatasetReader, Seq2SeqDatasetReader
+from allennlp.data.dataset_readers import PennTreeBankConstituencySpanDatasetReader, UniversalDependenciesDatasetReader, Seq2SeqDatasetReader, LanguageModelingReader
 from allennlp.data.vocabulary import Vocabulary
 
 from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
@@ -52,6 +52,9 @@ flags.DEFINE_integer('batch_size', 16, 'Batch intervals to log')
 flags.DEFINE_integer('max_epochs', 1, 'max epoch number to run')
 flags.DEFINE_integer('max_vocabs', 100000, 'Maximum number of vocabulary')
 flags.DEFINE_string('optimizer', 'adam', 'Gradient descent optimizer')
+flags.DEFINE_float('drop_out', 0., 'dropout rate, if it is RNN base: for outputs of each RNN layer except the last layer')
+flags.DEFINE_boolean('bidrectional', False, 'if it is RNNbase, whether it becomes bidirectional RNN')
+flags.DEFINE_integer('max_len', 40, 'maximum length to generate tokens')
 #TODO: DATA PARALLEL / MODEL PARALLEL
 
 flags.mark_flag_as_required('run_name')
@@ -64,7 +67,8 @@ data_reader_factory = {
   'debug': pos_data_reader.TaskDataReader,
   'ptb_tree': PennTreeBankConstituencySpanDatasetReader,
   'ud-eng': UniversalDependenciesDatasetReader,
-  'nc_zhen': Seq2SeqDatasetReader
+  'nc_zhen': Seq2SeqDatasetReader,
+  'wikitext': LanguageModelingReader
 }
 
 test_sentences = {
@@ -113,6 +117,8 @@ def main(argv):
   vocab = Vocabulary.from_instances(
                 train_dataset + validation_dataset, max_vocab_size=FLAGS.max_vocabs)
 
+  #print(vocab.print_statistics())
+
   embeddings = embeddings_factory.get_embeddings(FLAGS.embeddings, vocab, embedding_dim=FLAGS.embeddings_dim)
 
   models_args = {
@@ -123,6 +129,9 @@ def main(argv):
     'hidden_dims': FLAGS.hiddens_dim,
     'batch_first': True,
     'dataset_name': FLAGS.dataset,
+    'dropout': FLAGS.drop_out,
+    'bidirectional': FLAGS.bidrectional,
+    'max_len': FLAGS.max_len
   }
 
   out_feature_key, model = models_factory.get_model_fn(**models_args)
@@ -130,8 +139,6 @@ def main(argv):
   model = model.to(device)
 
   optimizer = optimizers_factory[FLAGS.optimizer](model.parameters(), lr=0.001)
-
-  # print(vocab.print_statistics())
 
   iterator = iterators_factory.get_iterator(FLAGS.dataset, FLAGS.batch_size)
 
@@ -155,21 +162,30 @@ def main(argv):
   finally:
     if status == 0:
       _cudart.cudaProfilerStop()
-  
-  predictor = predictors_factory.get_predictors(FLAGS.dataset, model, reader)
-  test_tokens_or_sentence = test_sentences[FLAGS.dataset]
-  pred_logits = predictor.predict(test_tokens_or_sentence)
-  pred_logits_key = predictors_factory.get_logits_key(FLAGS.task)
-  if pred_logits_key is not None:
-   pred_logits = pred_logits[pred_logits_key]
-
-  if FLAGS.task == 'pos':
-    top_ids = np.argmax(pred_logits, axis=-1)
-    print([model.vocab.get_token_from_index(i, out_feature_key) for i in top_ids])
-  else:
-    print(pred_logits)
   final_time = time.time() - start_time
-  logger.info("Finished: ran for %d secs", final_time)
+  logger.info("Finished training: ran for %d secs", final_time)
+
+  # TODO: VERY ROUGH.
+  if FLAGS.task == 'lm':
+    for _ in range(50):
+      tokens, _ = model.generate()
+    logger.info("GENERATED WORDS:")
+    logger.info(''.join(token.text for token in tokens))
+  else:
+    predictor = predictors_factory.get_predictors(FLAGS.dataset, model, reader)
+    test_tokens_or_sentence = test_sentences[FLAGS.dataset]
+    pred_logits = predictor.predict(test_tokens_or_sentence)
+    pred_logits_key = predictors_factory.get_logits_key(FLAGS.task)
+    if pred_logits_key is not None:
+     pred_logits = pred_logits[pred_logits_key]
+
+    if FLAGS.task == 'pos':
+      top_ids = np.argmax(pred_logits, axis=-1)
+      print([model.vocab.get_token_from_index(i, out_feature_key) for i in top_ids])
+    else:
+      print(pred_logits)
+  final_time = time.time() - start_time
+  logger.info("Finished application: ran for %d secs", final_time)
   
 if __name__ == "__main__":
   app.run(main)

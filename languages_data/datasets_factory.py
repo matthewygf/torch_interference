@@ -41,6 +41,20 @@ datasets_links = {
         'https://s3.eu-west-2.amazonaws.com/mattzooey/training-parallel-nv-v12/training/news-commentary-v14.en-zh.val.tsv'
       ]
     }
+  },
+  'wikitext':{
+    'train': {
+      'preprocess': False,
+      'paths':[
+        'https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/train.txt'
+      ]
+    },
+    'val': {
+      'preprocess': False,
+      'paths': [
+        'https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/valid.txt'
+      ]
+    }
   }
 }
 

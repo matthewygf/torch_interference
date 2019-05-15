@@ -4,7 +4,7 @@ from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper, StackedSelf
 from allennlp.models.encoder_decoders.simple_seq2seq import SimpleSeq2Seq
 from allennlp.modules.attention import DotProductAttention
 
-from language_models import lstm_tagger
+from language_models import lstm_tagger, generative_seq_model
 
 seq2seq_models = {
   'lstm': True,
@@ -26,7 +26,8 @@ seq2seq_wrapped = {
 dataset_model = {
   'debug': lstm_tagger.SimpleLstmPosTagger,
   'ud-eng': lstm_tagger.WordsLstmPosTagger,
-  'nc_zhen': SimpleSeq2Seq
+  'nc_zhen': SimpleSeq2Seq,
+  'wikitext': generative_seq_model.GenerativeSeqModel
 }
 
 # NOTE: Necessary because different dataset has different dataset reader,
@@ -34,10 +35,11 @@ dataset_model = {
 output_feature_keys = {
   'debug': 'labels',
   'ud-eng': 'pos',
-  'nc_zhen': 'target_tokens'
+  'nc_zhen': 'target_tokens',
+  'wikitext': None
 }
 
-def get_model_fn(model_name, embeddings, vocab, input_dims=128, hidden_dims=128, dataset_name='debug', **kwargs):
+def get_model_fn(model_name, embeddings, vocab, input_dims=128, hidden_dims=128, dataset_name='debug', max_len=40, **kwargs):
   is_seq2seq = seq2seq_models.get(model_name, False)
   
   wrapped = None
@@ -79,7 +81,9 @@ def get_model_fn(model_name, embeddings, vocab, input_dims=128, hidden_dims=128,
       'word_embeddings': embeddings,
       'encoder': wrapped,
       'vocab': vocab,
-      'output_feature_key': output_feature_keys[dataset_name]
+      'output_feature_key': output_feature_keys[dataset_name],
+      'max_len': max_len,
+      'hidden_size': hidden_dims
     }
   else:
     model_args = {
