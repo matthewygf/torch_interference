@@ -3,9 +3,6 @@ import subprocess
 import os
 import time
 
-
-
-
 def clean_timeline(args):
   path, filename = args
   sets = [
@@ -46,11 +43,14 @@ def clean_timeline(args):
 def main():
   # clean "==="
   timeline_to_clean = []
-  for root_dir, dirs, files in os.walk(os.getcwd()):
+  print("start converting and cleaning")
+  curr_dir = os.path.abspath(os.path.dirname(__file__))
+  start_time = time.time()
+  for root_dir, dirs, files in os.walk(curr_dir):
     for filename in files:
       if "__timeline" in filename and "experiment" in root_dir:
         timeline_path = os.path.join(root_dir, filename)
-        nvprof_dirs = os.path.join(os.getcwd(), 'nvprof_conv')
+        nvprof_dirs = os.path.join(curr_dir, 'nvprof_conv')
         out_log = os.path.join(nvprof_dirs, 'convs.log')
         path_dir = int(os.path.basename(os.path.dirname(filename)))
         nvprof_exp_dir = os.path.join(nvprof_dirs, path_dir)
@@ -64,9 +64,11 @@ def main():
             time.sleep(10)
           print("done converting %s" % timeline_path)
           timeline_to_clean.append((new_timeline_path, filename))
+  print("finish converting all files in %d secs" % (time.time() - start_time))
+  start_time = time.time()
   # multiprocess clean
   with multiprocessing.Pool(processes=4) as pools:
     pools.map(clean_timeline, timeline_to_clean)
-
+  print("finish cleaning lines in %d secs" % (time.time() - start_time))
 if __name__ == "__main__":
   main()
