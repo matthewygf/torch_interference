@@ -11,25 +11,28 @@ import numpy as np
 import copy
 import models_to_run
 
-googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True', '--max_epochs', '8']
-mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True', '--max_epochs', '8']
-vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '8']
-resnet_cmd = ['python', 'image_classifier.py', '--model', 'resnet', '--use_cuda', 'True', '--max_epochs', '8']
-pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '2', '--task', 'pos', '--use_cuda', 'True']
+googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True', '--max_epochs', '10']
+mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True', '--max_epochs', '10']
+vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '10']
+resnet_cmd = ['python', 'image_classifier.py', '--model', 'resnet', '--use_cuda', 'True', '--max_epochs', '10']
+pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '4', '--task', 'pos', '--use_cuda', 'True']
 # NOTE: these mt tasks aren't very good , feel free to tune.
-mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '128', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '35000', '--batch_size', '32' ,'--use_cuda', 'True']
-mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '128', '--hiddens_dim', '128',  '--task', 'mt', '--max_vocabs', '35000','--batch_size', '32', '--use_cuda', 'True']
+mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '64' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '35000', '--batch_size', '16' ,'--use_cuda', 'True']
+mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '64', '--hiddens_dim', '64',  '--task', 'mt', '--max_vocabs', '35000','--batch_size', '16', '--use_cuda', 'True']
 # NOTE: language model need some tuning too.
-lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '50', '--hiddens_dim', '128', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '32', '--max_epochs', '3']
+lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '64', '--max_len', '50', '--hiddens_dim', '64', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', 
                      '--csv',]
+                     
 models_train = {
     'googlenet_cmd': googlenet_cmd,
     'mobilenetv2_cmd': mobilenetv2_cmd,
     'vgg19_cmd': vgg19_cmd,
+    'resnet_cmd': resnet_cmd,
     'pos_cmd': pos_cmd,
     'mt1_cmd': mt1_cmd,
     'mt2_cmd': mt2_cmd,
+    'lm_cmd': lm_cmd,
     'nvprof_prefix': nvprof_prefix_cmd
 }
 
@@ -118,6 +121,13 @@ def kill_process_safe(pid,
     
 _RUNS_PER_SET = 20
 _START = 1
+_RUN_NVPROF = True
+
+def get_total_run():
+  if _RUN_NVPROF:
+    return _START + _RUNS_PER_SET
+  else:
+    return int(_RUNS_PER_SET / 2)+ _START
 
 def run(
     average_log, experiment_path, 
@@ -132,9 +142,8 @@ def run(
     accumulated_models = np.zeros(len(experiment_set), dtype=float)
 
     is_single = len(experiment_set) == 1
-    
 
-    if is_single:
+    if is_single and _RUN_NVPROF:
         # 1. we want to use nvprof three times at least, make sure the metrics are correct
         for metric_run in range(3):
           nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, 
@@ -145,8 +154,8 @@ def run(
               time.sleep(2)
           out.close()
           err.close()
-        
-    for experiment_run in range(_START, _START+_RUNS_PER_SET):
+    
+    for experiment_run in range(_START, get_total_run()):
         if os.path.exists(average_log):
             average_file = open(average_log, mode='a+')
         else:
@@ -171,7 +180,7 @@ def run(
         sys_tracker = sys_track.SystemInfoTracker(experiment_path)
 
         # 2. we should do timeline profile three times, just in case timeline was off .____.
-        if experiment_run <= int(_RUNS_PER_SET / 2):
+        if (experiment_run <= int(_RUNS_PER_SET / 2)) and _RUN_NVPROF:
             # nvprof timeline here
             timeline_file_path = os.path.join(experiment_path, str(experiment_run)+'-timeline_err.log')
             timeline_file = open(timeline_file_path, 'a+')
@@ -269,6 +278,11 @@ def main():
 
         run(experiment_file, current_experiment_path, ex, len(sets), experiment_index)
 
+    with open('conv_clean.log', 'w+') as cc_log:
+      conv_and_clean_p = subprocess.Popen(['python', 'clean_timeline.py'], stderr=cc_log, stdout=cc_log)
+      while conv_and_clean_p.poll() is None:
+        time.sleep(5)
+    print("finish everything.")
 if __name__ == "__main__":
     main()
         

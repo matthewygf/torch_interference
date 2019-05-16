@@ -34,7 +34,7 @@ def main():
     for filename in files:
       if "__timeline" in filename and "experiment" in root_dir:
         timeline_path = os.path.join(root_dir, filename)
-        nvprof_dirs = os.path.join(curr_dir, 'nvprof_conv')
+        nvprof_dirs = os.path.join(curr_dir, 'nvprof_conv2')
         out_log = os.path.join(nvprof_dirs, 'convs.log')
         path_dir = int(os.path.basename(os.path.dirname(filename)))
         nvprof_exp_dir = os.path.join(nvprof_dirs, path_dir)
@@ -51,7 +51,7 @@ def main():
   print("finish converting all files in %d secs" % (time.time() - start_time))
   start_time = time.time()
   # multiprocess clean
-  with multiprocessing.Pool(processes=4) as pools:
+  with multiprocessing.Pool(processes=6) as pools:
     pools.map(clean_timeline, timeline_to_clean)
   print("finish cleaning lines in %d secs" % (time.time() - start_time))
 if __name__ == "__main__":
