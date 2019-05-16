@@ -55,6 +55,8 @@ flags.DEFINE_string('optimizer', 'adam', 'Gradient descent optimizer')
 flags.DEFINE_float('drop_out', 0., 'dropout rate, if it is RNN base: for outputs of each RNN layer except the last layer')
 flags.DEFINE_boolean('bidirectional', False, 'if it is RNNbase, whether it becomes bidirectional RNN')
 flags.DEFINE_integer('max_len', 40, 'maximum length to generate tokens')
+flags.DEFINE_integer('num_layers', 1, 'number of layers of recurrent models')
+
 #TODO: DATA PARALLEL / MODEL PARALLEL
 
 flags.mark_flag_as_required('run_name')
@@ -132,6 +134,7 @@ def main(argv):
     'dropout': FLAGS.drop_out,
     'bidirectional': FLAGS.bidirectional,
     'max_len': FLAGS.max_len,
+    'num_layers': FLAGS.num_layers
   }
 
   out_feature_key, model = models_factory.get_model_fn(**models_args)
