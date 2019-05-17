@@ -18,11 +18,11 @@ resnet_cmd = ['python', 'image_classifier.py', '--model', 'resnet', '--use_cuda'
 
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '4', '--task', 'pos', '--use_cuda', 'True']
 
-# NOTE: these mt tasks aren't very good , feel free to tune.
-mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '256' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '10000', '--batch_size', '16' ,'--use_cuda', 'True']
-mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '64', '--hiddens_dim', '256',  '--task', 'mt', '--max_vocabs', '10000','--batch_size', '16', '--use_cuda', 'True']
+# NOTE: these mt tasks aren't very good , feel free to tune, most likely because of "number of vocabs".
+mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '10000', '--batch_size', '16' ,'--use_cuda', 'True']
+mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '64', '--hiddens_dim', '128',  '--task', 'mt', '--max_vocabs', '10000','--batch_size', '16', '--use_cuda', 'True']
 # NOTE: language model need some tuning too.
-lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '64', '--max_len', '30', '--hiddens_dim', '64', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3']
+lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '64', '--max_len', '30', '--hiddens_dim', '64', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3']
 lm_large_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '2']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', '--csv',]
                      
@@ -122,9 +122,9 @@ def kill_process_safe(pid,
     err_file_paths.pop(i)
     return mean, num
     
-_RUNS_PER_SET = 10
+_RUNS_PER_SET = 1
 _START = 1
-_RUN_NVPROF = True
+_RUN_NVPROF = False
 
 def run(
     average_log, experiment_path, 
@@ -275,6 +275,7 @@ def main():
         experiment_file = os.path.join(experiment_path, 'experiment.log')
 
         if _RUN_NVPROF:
+          # TODO: transition and test with nsight
           # run with nvprof timeline 
           current_experiment_path = os.path.join(current_experiment_path, "timeline_metrics")
           profiled_log = os.path.join(current_experiment_path, 'experiment.log')
@@ -282,11 +283,6 @@ def main():
         else:
           run(experiment_file, current_experiment_path, ex, len(sets), experiment_index)
 
-    with open('conv_clean.log', 'w+') as cc_log:
-      conv_and_clean_p = subprocess.Popen(['python', 'clean_timeline.py'], stderr=cc_log, stdout=cc_log)
-      while conv_and_clean_p.poll() is None:
-        time.sleep(5)
-    print("finish everything.")
 if __name__ == "__main__":
     main()
         

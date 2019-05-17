@@ -171,7 +171,7 @@ def main(argv):
   # TODO: VERY ROUGH.
   if FLAGS.task == 'lm':
     for _ in range(50):
-      tokens, _ = model.generate(device)
+      tokens, _ = model.generate(device, FLAGS.num_layers)
     logger.info("GENERATED WORDS:")
     logger.info(''.join(token.text for token in tokens))
   else:

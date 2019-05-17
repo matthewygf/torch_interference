@@ -1,10 +1,11 @@
 sets = [
-  # ['pos_cmd', 'pos_cmd'],
-  # ['mt1_cmd', 'mt1_cmd']
-  # ['mt2_cmd', 'mt2_cmd'],
-  # ['lm_cmd', 'lm_cmd'],
-  # ['lm_large_cmd', 'lm_large_cmd'],
-  ['lm_xlarge_cmd','lm_xlarge_cmd']
+  ['pos_cmd', 'pos_cmd'],
+  ['mt1_cmd', 'mt1_cmd']
+  ['mt2_cmd', 'mt2_cmd'],
+  ['lm_cmd', 'lm_cmd'],
+  ['lm_large_cmd', 'lm_large_cmd'],
+  ['vgg19_cmd', 'vgg19_cmd'],
+  ['resnet_cmd', 'resnet_cmd'],
   # ['googlenet_cmd'],
   # ['mobilenetv2_cmd'],
   # ['vgg19_cmd'],
@@ -17,7 +18,6 @@ sets = [
   # ['googlenet_cmd','googlenet_cmd'],
   # ['mobilenetv2_cmd','mobilenetv2_cmd'],
   # ['pos_cmd', 'pos_cmd'],
-  # ['resnet_cmd', 'resnet_cmd'],
   # ['googlenet_cmd', 'mobilenetv2_cmd'],
   # ['googlenet_cmd', 'vgg19_cmd'],
   # ['googlenet_cmd', 'pos_cmd'],
