@@ -181,7 +181,7 @@ def run(
             smi_file_path = os.path.join(experiment_path, str(experiment_run)+'smi_out.log') 
             smi_file = open(smi_file_path, 'a+')
             nvidia_csv = "smi_watch.csv"
-            nvidia_csv = str(experiment_run)+nvidia_csv
+            nvidia_csv = str(experiment_run)+nvidia_csv+("_".join(m))
             nvidia_smi_cmd = ['watch', '-n', '0.2', 'nvidia-smi', 
                               '--query-gpu=memory.used,memory.total,utilization.gpu,utilization.memory,power.draw', 
                               '--format=noheader,csv', '|', 'tee', '-a' , experiment_path+'/'+nvidia_csv]
