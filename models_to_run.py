@@ -1,6 +1,6 @@
 sets = [
   ['pos_cmd', 'pos_cmd'],
-  ['mt1_cmd', 'mt1_cmd']
+  ['mt1_cmd', 'mt1_cmd'],
   ['mt2_cmd', 'mt2_cmd'],
   ['lm_cmd', 'lm_cmd'],
   ['lm_large_cmd', 'lm_large_cmd'],
