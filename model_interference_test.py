@@ -11,12 +11,12 @@ import numpy as np
 import copy
 import models_to_run
 
-googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True', '--max_epochs', '10']
-mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True', '--max_epochs', '10']
-vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '10']
-resnet_cmd = ['python', 'image_classifier.py', '--model', 'resnet', '--use_cuda', 'True', '--max_epochs', '10']
+googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True', '--max_epochs', '7']
+mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True', '--max_epochs', '7']
+vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '7']
+resnet_cmd = ['python', 'image_classifier.py', '--model', 'resnet', '--use_cuda', 'True', '--max_epochs', '7']
 
-pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '4', '--task', 'pos', '--use_cuda', 'True']
+pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '6', '--task', 'pos', '--use_cuda', 'True']
 
 # NOTE: these mt tasks aren't very good , feel free to tune, most likely because of "number of vocabs".
 mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '10000', '--batch_size', '16' ,'--use_cuda', 'True']
@@ -24,7 +24,7 @@ mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_
 # NOTE: language model need some tuning too.
 lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '64', '--max_len', '30', '--hiddens_dim', '64', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3']
 lm_large_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '2']
-nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', '--csv',]
+nvprof_prefix_cmd = ['nv-nsight-cu-cli', '--profile-from-start', 'off', '--csv',]
                      
 models_train = {
     'googlenet_cmd': googlenet_cmd,
@@ -82,9 +82,8 @@ def create_process(model_name, index, experiment_path, percent=0.0, is_nvprof=Fa
     cmd = cmd + ['--run_name', output_dir_name]
     
     if is_nvprof:
-        nvprof_log = os.path.join(train_dir, 'nvprof_log.log')
         nv_prefix = copy.deepcopy(models_train['nvprof_prefix'])
-        nv_prefix += ['--log-file', nvprof_log]
+        nv_prefix += ['--export', str(index)+model_name+execution_id[-1]]
         if nvprof_args is not None:
             nv_prefix += nvprof_args
         cmd = nv_prefix + cmd
@@ -145,8 +144,9 @@ def run(
         # 1. we want to use nvprof three times at least, make sure the metrics are correct
         for metric_run in range(3):
           nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, 
-              ['--timeout', str(60*10),
-               '--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_utilization,sysmem_utilization,flop_dp_efficiency,flop_sp_efficiency',])
+              [
+                '--summary', 'per-gpu',
+                '--metrics', 'gpu__time_active,gpu__time_duration,sm__active_warps_avg,dram__bytes_per_sec,sm__active_cycles_avg,smsp__inst_executed_avg',])
           while nvp.poll() is None:
               print("nvprof profiling metrics %s" % experiment_set[0])
               time.sleep(2)
@@ -176,20 +176,6 @@ def run(
             ids[p.pid] = i
         should_stop = False
         sys_tracker = sys_track.SystemInfoTracker(experiment_path)
-
-        # 2. we should do timeline profile three times, just in case timeline was off .____.
-        if (experiment_run <= int(_RUNS_PER_SET / 2)) and nvprofiling:
-            # nvprof timeline here
-            timeline_file_path = os.path.join(experiment_path, str(experiment_run)+'-timeline_err.log')
-            timeline_file = open(timeline_file_path, 'a+')
-            timeline_prof_file = os.path.join(experiment_path, '%p_timeline')
-            nvprof_all_cmd = ['nvprof', '--profile-all-processes', '--trace', 'gpu', '-o', timeline_prof_file ]
-
-            prof_timeline = subprocess.Popen(nvprof_all_cmd, stdout=timeline_file, stderr=timeline_file)
-            prof_poll = None
-        else:
-            prof_timeline = None
-            prof_poll = None
 
         try:
             smi_file_path = os.path.join(experiment_path, str(experiment_run)+'smi_out.log') 
@@ -246,16 +232,6 @@ def run(
         average_file.close()
         sys_tracker.stop()
 
-        if prof_timeline is not None:
-          prof_poll = prof_timeline.poll()
-          while prof_poll is None:
-              time.sleep(30)
-              print("waiting for nvprof to finish.")
-              prof_poll = prof_timeline.poll()
-              prof_timeline.kill()
-          print("nvprof finished")
-          timeline_file.close()
-
     # Experiment average size.
     average_file = open(average_log, mode='a+')
     for i in range(len(experiment_set)):
@@ -276,7 +252,7 @@ def main():
 
         if _RUN_NVPROF:
           # TODO: transition and test with nsight
-          # run with nvprof timeline 
+          # NOTE: timeline please use nsight-system gui to do so. much better.
           current_experiment_path = os.path.join(current_experiment_path, "timeline_metrics")
           profiled_log = os.path.join(current_experiment_path, 'experiment.log')
           run(profiled_log, current_experiment_path, ex, len(sets), experiment_index, _RUN_NVPROF)
