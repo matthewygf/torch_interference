@@ -35,7 +35,13 @@ def get_app_finish_time(output_log):
 
 def main():
   app_output_logs = []
-  for dir_path, subdirs, filenames in os.walk(os.getcwd()):
+
+  if os.name == "nt":
+    project_dir = os.getcwd()
+  else:
+    project_dir = os.path.abspath(os.path.dirname(__file__))
+
+  for dir_path, subdirs, filenames in os.walk(project_dir):
     for fn in filenames:
       if "nvprof" in dir_path: continue
       if "err.log" in fn and "-timeline" not in fn:
@@ -47,7 +53,7 @@ def main():
   finished_time = time.time() - start_time
   print(finished_time)
   results = {}
-  apptime_f = os.path.join(os.getcwd(), "application_time.csv")
+  apptime_f = os.path.join(project_dir, "application_time.csv")
   with open(apptime_f, 'w+') as app_time_handle:
     field_names = ['model_runs', 'model', 'application_runtime(s)']
     csv_writer = csv.DictWriter(app_time_handle, field_names, delimiter=',', lineterminator='\n')
