@@ -9,6 +9,10 @@ import copy
 def get_app_finish_time(output_log):
   sets = copy.deepcopy(models_to_run.sets)
 
+  dict_sets = {}
+  for index, m_set in enumerate(sets):
+    dict_sets[index] = "_".join(m_set)
+
   models = [
     'pos_cmd', 
     'mt1', 
@@ -21,7 +25,7 @@ def get_app_finish_time(output_log):
     'lm_large',]
 
   set_num = int(os.path.basename(os.path.dirname(os.path.dirname(output_log))))
-  run_name = sets[set_num]
+  run_name = dict_sets[set_num]
   with open(output_log, 'r', encoding='utf8') as outlog_f:
     for line in outlog_f:
       if "Finished" in line and "training" not in line:
