@@ -1,13 +1,13 @@
 sets = [
-  ['googlenet_cmd'],
-  ['mobilenetv2_cmd'],
-  ['vgg19_cmd'],
-  ['lm_large_cmd'],
-  ['lm_cmd'],
-  ['mt1_cmd'],
-  ['mt2_cmd'],
+#   ['googlenet_cmd'],
+#   ['mobilenetv2_cmd'],
+#   ['vgg19_cmd'],
+#   ['lm_large_cmd'],
+#   ['lm_cmd'],
+#   ['mt1_cmd'],
+#   ['mt2_cmd'],
   ['lm_cmd', 'vgg19_cmd'],
-  ['lm_large_cmd', 'vgg19_cmd']
+  # ['lm_large_cmd', 'vgg19_cmd']
   # ['googlenet_cmd', 'googlenet_cmd'],
   # ['mobilenetv2_cmd', 'mobilenetv2_cmd'],
   # ['vgg19_cmd', 'vgg19_cmd'],
