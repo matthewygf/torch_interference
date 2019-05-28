@@ -40,6 +40,7 @@ flags.mark_flag_as_required('dataset_dir')
 models_factory = {
   'googlenet': models.googlenet,
   'mobilenet': models.mobilenet_v2,
+  'mobilenet_large': models.mobilenet_v2,
   'resnet': models.resnet50,
   'vgg19': models.vgg19
 }
@@ -85,9 +86,21 @@ def main(argv):
   dataset_fn = datasets_factory[FLAGS.dataset]
   if 'google' in FLAGS.model: 
     model = model_fn(pretrained=False, transform_input=False, aux_logits=False, num_classes=10)
+  elif 'mobilenet_large' in FLAGS.model:
+    inverted_residual_setting = [
+        # t, c, n, s
+        [1, 16, 1, 1],
+        [10, 24, 2, 2],
+        [10, 32, 3, 2],
+        [10, 64, 4, 2],
+        [10, 96, 3, 1],
+        [10, 160, 3, 2],
+        [10, 320, 1, 1],
+    ]
+    model = model_fn(pretrained=False, num_classes=10, inverted_residual_setting=inverted_residual_setting)
   else:
     model = model_fn(pretrained=False, num_classes=10)
-
+  
   compose_trans = transforms.Compose([
     transforms.ToTensor()
   ])
