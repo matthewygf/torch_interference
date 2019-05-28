@@ -25,16 +25,25 @@ import threading
 import time
 import traceback
 import psutil
+import csv
 
-class SystemInfoTracker(object):
+class InfosTracker(object):
   """Keep track of system information such as maximum memory usage with separate thread."""
 
   def __init__(self, output_dir):
-    self.system_info_log = open(os.path.join(output_dir, 'system.log'), 'w+')  # pylint: disable=line-too-long
+    self.system_info_log = open(os.path.join(output_dir, 'system_util.csv'), 'w+')  # pylint: disable=line-too-long
+    field_names = [
+      'time', 
+      'cpu_percent', 
+      'mem_percent', 
+      'average_cpu_percent', 
+      'average_mem_percent', 
+      ]
+    self.csv_writer = csv.DictWriter(self.system_info_log, field_names, delimiter=',', lineterminator='\n')
+    self.csv_writer.writeheader()
     self.scheduler = sched.scheduler(time.time, time.sleep)
     self.system_info = {}
     self.system_info['average_mem_percent'] = 0
-    self.system_info['max_cpu_percent'] = 0
     self.system_info['average_cpu_percent'] = 0
 
     self.log_times = 0
@@ -58,7 +67,7 @@ class SystemInfoTracker(object):
 
     return dict(self.system_info)
 
-  def _update_system_info(self, ):
+  def _update_system_info(self):
     """Read and update process info using background thread every 1 second."""
 
     try:
@@ -71,7 +80,6 @@ class SystemInfoTracker(object):
       mean_cpu = (self.log_times * self.system_info['average_cpu_percent']) + cpu_percent
       self.system_info['average_mem_percent'] = mean_mem / (self.log_times + 1)
       self.system_info['average_cpu_percent'] = mean_cpu / (self.log_times + 1)
-      self.system_info['max_cpu_percent'] = max(self.system_info['max_cpu_percent'], cpu_percent)  # pylint: disable=line-too-long
       self.log_times += 1
       entry = {}
       entry['time'] = time.time() - self.start_time
@@ -79,7 +87,8 @@ class SystemInfoTracker(object):
       entry['mem_percent'] = mem_percent
       entry['average_cpu_percent'] = self.system_info['average_cpu_percent']
       entry['average_mem_percent'] = self.system_info['average_mem_percent']
-      self.system_info_log.write(json.dumps(entry) + '\n')
+
+      self.csv_writer.writerow(entry)
       if not self.exit_event.is_set():
         # Schedule the next event to be run after 1 second
         self.scheduler.enter(1, 1, self._update_system_info)  # pylint: disable=no-value-for-parameter

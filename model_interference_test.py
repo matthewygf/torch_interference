@@ -13,6 +13,7 @@ import models_to_run
 
 googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True', '--max_epochs', '7']
 mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True', '--max_epochs', '7']
+mobilenetv2_large_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet_large', '--use_cuda', 'True', '--max_epochs', '7']
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '7']
 resnet_cmd = ['python', 'image_classifier.py', '--model', 'resnet', '--use_cuda', 'True', '--max_epochs', '7']
 
@@ -29,6 +30,7 @@ nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', '--csv',]
 models_train = {
     'googlenet_cmd': googlenet_cmd,
     'mobilenetv2_cmd': mobilenetv2_cmd,
+    'mobilenetv2_large_cmd': mobilenetv2_large_cmd,
     'vgg19_cmd': vgg19_cmd,
     'resnet_cmd': resnet_cmd,
     'pos_cmd': pos_cmd,
@@ -124,7 +126,7 @@ def kill_process_safe(pid,
     
 _RUNS_PER_SET = 1
 _START = 1
-_RUN_NVPROF = True
+_RUN_NVPROF = False
 
 def run(
     average_log, experiment_path, 
@@ -175,7 +177,7 @@ def run(
             out_file_paths.append(path)
             ids[p.pid] = i
         should_stop = False
-        sys_tracker = sys_track.SystemInfoTracker(experiment_path)
+        sys_tracker = sys_track.InfosTracker(experiment_path)
 
         try:
             smi_file_path = os.path.join(experiment_path, str(experiment_run)+'smi_out.log') 
@@ -243,7 +245,12 @@ def main():
     # which one we should run in parallel
     # TODO: randomly start each process.
     sets = copy.deepcopy(models_to_run.sets)
-    project_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    curr_dir = None
+    if os.name == "nt":
+      curr_dir = os.getcwd()
+    else:
+      curr_dir = os.path.dirname(__file__)
+    project_dir = os.path.abspath(os.path.dirname(curr_dir))
     experiment_path = os.path.join(project_dir, 'experiment')
 
     for experiment_index, ex in enumerate(sets):
