@@ -192,12 +192,14 @@ def run(
             pmon_cmd = copy.deepcopy(models_train['pmon_mod_cmd'])
             pmon_cmd += ['--logpath', pmon_csv]
             pmon_p = subprocess.Popen(pmon_cmd, stdout=pmon_log, stderr=pmon_log)
+            pmon_poll = None
 
             pcie_log = os.path.join(experiment_path, str(experiment_run)+'pcie.log')
             pcie_csv = os.path.join(experiment_path, str(experiment_run)+'pcie.csv')
             pcie_cmd = copy.deepcopy(models_train['pcie_mod_cmd'])
             pcie_cmd += ['--logpath', pcie_csv]
             pcie_p = subprocess.Popen(pcie_cmd, stdout=pcie_log, stderr=pcie_log)
+            pcie_poll = None
 
             smi_file_path = os.path.join(experiment_path, str(experiment_run)+'smi_out.log') 
             smi_file = open(smi_file_path, 'a+')
