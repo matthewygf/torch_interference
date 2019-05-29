@@ -27,7 +27,10 @@ lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--datase
 lm_med_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '1']
 lm_large_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '2']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', '--csv',]
-                     
+
+pmon_mod_cmd = ['pmon', '--csv', 'true', '--interval', '250']
+pcie_mod_cmd = ['pcie', '--csv', 'true', '--interval', '250']
+
 models_train = {
     'googlenet_cmd': googlenet_cmd,
     'mobilenetv2_cmd': mobilenetv2_cmd,
@@ -40,7 +43,9 @@ models_train = {
     'lm_cmd': lm_cmd,
     'lm_large_cmd': lm_large_cmd,
     'lm_med_cmd': lm_med_cmd,
-    'nvprof_prefix': nvprof_prefix_cmd
+    'nvprof_prefix': nvprof_prefix_cmd,
+    'pmon_mod_cmd': pmon_mod_cmd,
+    'pcie_mod_cmd': pcie_mod_cmd
 }
 
 def process(line):
@@ -182,6 +187,18 @@ def run(
         sys_tracker = sys_track.InfosTracker(experiment_path)
 
         try:
+            pmon_log = os.path.join(experiment_path, str(experiment_run)+'pmon.log')
+            pmon_csv = os.path.join(experiment_path, str(experiment_run)+'pmon.csv')
+            pmon_cmd = copy.deepcopy(models_train['pmon_mod_cmd'])
+            pmon_cmd += ['--logpath', pmon_csv]
+            pmon_p = subprocess.Popen(pmon_cmd, stdout=pmon_log, stderr=pmon_log)
+
+            pcie_log = os.path.join(experiment_path, str(experiment_run)+'pcie.log')
+            pcie_csv = os.path.join(experiment_path, str(experiment_run)+'pcie.csv')
+            pcie_cmd = copy.deepcopy(models_train['pcie_mod_cmd'])
+            pcie_cmd += ['--logpath', pcie_csv]
+            pcie_p = subprocess.Popen(pcie_cmd, stdout=pcie_log, stderr=pcie_log)
+
             smi_file_path = os.path.join(experiment_path, str(experiment_run)+'smi_out.log') 
             smi_file = open(smi_file_path, 'a+')
             nvidia_csv = "smi_watch.csv"
@@ -215,6 +232,14 @@ def run(
                 smi_poll = smi_p.poll()
                 if smi_poll is None:
                     print('NVIDIA_SMI Process %d still running' % smi_p.pid)
+                
+                pmon_poll = pmon_p.poll()
+                if pmon_poll is None:
+                    print('PMON Process %d still running' % pmon_p.pid)
+
+                pcie_poll = pcie_p.poll()
+                if pcie_poll is None:
+                    print('PCIe mon Process %d still running' % pcie_p.pid)
 
             print('total experiments: %d, experiment_run %d , finished %d' % (total_length-1, experiment_run, experiment_index))
 
@@ -229,6 +254,8 @@ def run(
                 print('%d killed ! ! !' % pid)
         finally:
              smi_poll = smi_p.poll()
+             pmon_p.kill()
+             pcie_p.kill()
              if smi_poll is None:
                 smi_p.kill()
                 smi_file.close()
