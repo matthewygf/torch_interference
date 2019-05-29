@@ -187,14 +187,16 @@ def run(
         sys_tracker = sys_track.InfosTracker(experiment_path)
 
         try:
-            pmon_log = os.path.join(experiment_path, str(experiment_run)+'pmon.log')
+            pmon_log_path = os.path.join(experiment_path, str(experiment_run)+'pmon.log')
+            pmon_log = open(pmon_log_path, 'a+')
             pmon_csv = os.path.join(experiment_path, str(experiment_run)+'pmon.csv')
             pmon_cmd = copy.deepcopy(models_train['pmon_mod_cmd'])
             pmon_cmd += ['--logpath', pmon_csv]
             pmon_p = subprocess.Popen(pmon_cmd, stdout=pmon_log, stderr=pmon_log)
             pmon_poll = None
 
-            pcie_log = os.path.join(experiment_path, str(experiment_run)+'pcie.log')
+            pcie_log_path = os.path.join(experiment_path, str(experiment_run)+'pcie.log')
+            pcie_log = open(pcie_log_path, 'a+')
             pcie_csv = os.path.join(experiment_path, str(experiment_run)+'pcie.csv')
             pcie_cmd = copy.deepcopy(models_train['pcie_mod_cmd'])
             pcie_cmd += ['--logpath', pcie_csv]
@@ -257,7 +259,9 @@ def run(
         finally:
              smi_poll = smi_p.poll()
              pmon_p.kill()
+             pmon_log.close()
              pcie_p.kill()
+             pcie_log.close()
              if smi_poll is None:
                 smi_p.kill()
                 smi_file.close()
