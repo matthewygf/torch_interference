@@ -28,8 +28,8 @@ lm_med_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--da
 lm_large_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '2']
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', '--csv',]
 
-pmon_mod_cmd = ['pmon', '--csv', 'true', '--interval', '250']
-pcie_mod_cmd = ['pcie', '--csv', 'true', '--interval', '250']
+pmon_mod_cmd = ['pmon', '--csv=true', '--interval=250']
+pcie_mod_cmd = ['pcie', '--csv=true', '--interval=250']
 
 models_train = {
     'googlenet_cmd': googlenet_cmd,
@@ -191,7 +191,7 @@ def run(
             pmon_log = open(pmon_log_path, 'a+')
             pmon_csv = os.path.join(experiment_path, str(experiment_run)+'pmon.csv')
             pmon_cmd = copy.deepcopy(models_train['pmon_mod_cmd'])
-            pmon_cmd += ['--logpath', pmon_csv]
+            pmon_cmd += ['--logpath='+pmon_csv]
             pmon_p = subprocess.Popen(pmon_cmd, stdout=pmon_log, stderr=pmon_log)
             pmon_poll = None
 
@@ -199,7 +199,7 @@ def run(
             pcie_log = open(pcie_log_path, 'a+')
             pcie_csv = os.path.join(experiment_path, str(experiment_run)+'pcie.csv')
             pcie_cmd = copy.deepcopy(models_train['pcie_mod_cmd'])
-            pcie_cmd += ['--logpath', pcie_csv]
+            pcie_cmd += [ '--logpath='+pcie_csv ]
             pcie_p = subprocess.Popen(pcie_cmd, stdout=pcie_log, stderr=pcie_log)
             pcie_poll = None
 
