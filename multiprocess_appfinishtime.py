@@ -15,14 +15,21 @@ def get_app_finish_time(output_log):
 
   models = [
     'pos_cmd', 
-    'mt1', 
-    'mt2', 
+    'mt1_cmd', 
+    'mt2_cmd', 
     'lm_cmd', 
-    'resnet', 
-    'googlenet', 
-    'mobilenetv2', 
-    'vgg19',
-    'lm_large',]
+    'resnet_cmd', 
+    'googlenet_cmd', 
+    'mobilenetv2_cmd', 
+    'vgg19_cmd',
+    'lm_large_cmd',
+    'lm_med_cmd',
+    'mobilenetv2_large_cmd',
+    'densenet121_cmd',
+    'densenet169_cmd',
+    'efficientnetb0_cmd',
+    'efficientnetb3_cmd'
+    ]
 
   set_num = int(os.path.basename(os.path.dirname(os.path.dirname(output_log))))
   run_name = dict_sets[set_num]

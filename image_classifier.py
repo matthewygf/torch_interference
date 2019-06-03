@@ -5,6 +5,7 @@ import torchvision.models as models
 import torchvision.datasets as predefined_datasets
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
+from image_models.model import EfficientNet
 import torch
 import torch.optim as optim
 import time
@@ -42,11 +43,20 @@ models_factory = {
   'mobilenet': models.mobilenet_v2,
   'mobilenet_large': models.mobilenet_v2,
   'resnet': models.resnet50,
-  'vgg19': models.vgg19
+  'vgg19': models.vgg19,
+  'densenet121': models.densenet121,
+  'densenet169': models.densenet169,
+  'efficientnet-b0': EfficientNet.from_name,
+  'efficientnet-b3': EfficientNet.from_name,
 }
 
 datasets_factory = {
   'cifar10': predefined_datasets.CIFAR10
+}
+
+datasets_sizes = {
+  'cifar10': 10,
+  'imagenet': 100
 }
 
 def train(logger, model, device, train_loader, optimizer, epoch, loss_op):
@@ -84,8 +94,10 @@ def main(argv):
 
   model_fn = models_factory[FLAGS.model]
   dataset_fn = datasets_factory[FLAGS.dataset]
+  dataset_classes = datasets_sizes[FLAGS.dataset]
+  # TODO: Really need to start to change this better soon :/
   if 'google' in FLAGS.model: 
-    model = model_fn(pretrained=False, transform_input=False, aux_logits=False, num_classes=10)
+    model = model_fn(pretrained=False, transform_input=False, aux_logits=False, num_classes=dataset_classes)
   elif 'mobilenet_large' in FLAGS.model:
     inverted_residual_setting = [
         # t, c, n, s
@@ -97,9 +109,11 @@ def main(argv):
         [10, 160, 3, 2],
         [10, 320, 1, 1],
     ]
-    model = model_fn(pretrained=False, num_classes=10, inverted_residual_setting=inverted_residual_setting)
+    model = model_fn(pretrained=False, num_classes=dataset_classes, inverted_residual_setting=inverted_residual_setting)
+  elif 'efficientnet' in FLAGS.model:
+    model = model_fn(FLAGS.model, {'num_classes': dataset_classes})
   else:
-    model = model_fn(pretrained=False, num_classes=10)
+    model = model_fn(pretrained=False, num_classes=dataset_classes)
   
   compose_trans = transforms.Compose([
     transforms.ToTensor()

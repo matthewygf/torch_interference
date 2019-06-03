@@ -16,7 +16,10 @@ mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--u
 mobilenetv2_large_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet_large', '--use_cuda', 'True', '--max_epochs', '7']
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '7']
 resnet_cmd = ['python', 'image_classifier.py', '--model', 'resnet', '--use_cuda', 'True', '--max_epochs', '7']
-
+eff_b0_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b0', '--use_cud', 'True', '--max_epochs', '7']
+eff_b3_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b3', '--use_cuda', 'True', '--max_epochs', '7']
+dense121_cmd = ['python', 'image_classifier.py', '--model', 'densenet121', '--use_cuda', 'True', '--max_epochs', '7']
+dense169_cmd = ['python', 'image_classifier.py', '--model', 'densenet169', '--use_cuda', 'True', '--max_epochs', '7']
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '6', '--task', 'pos', '--use_cuda', 'True']
 
 # NOTE: these mt tasks aren't very good , feel free to tune, most likely because of "number of vocabs".
@@ -35,6 +38,10 @@ models_train = {
     'googlenet_cmd': googlenet_cmd,
     'mobilenetv2_cmd': mobilenetv2_cmd,
     'mobilenetv2_large_cmd': mobilenetv2_large_cmd,
+    'efficientnetb3_cmd': eff_b3_cmd,
+    'efficientnetb0_cmd': eff_b0_cmd,
+    'densenet121_cmd': dense121_cmd,
+    'densenet169_cmd': dense169_cmd,
     'vgg19_cmd': vgg19_cmd,
     'resnet_cmd': resnet_cmd,
     'pos_cmd': pos_cmd,
@@ -301,6 +308,11 @@ def main():
         else:
           run(experiment_file, current_experiment_path, ex, len(sets), experiment_index)
 
+    app_csv_p = subprocess.Popen(['python', 'multiprocess_appfinishtime.py'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    while app_csv_p.poll() is None:
+      time.sleep(2)
+      print("waiting for app time csv finish")
+    print("Done.")
 if __name__ == "__main__":
     main()
         
