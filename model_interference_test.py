@@ -138,7 +138,7 @@ def kill_process_safe(pid,
     err_file_paths.pop(i)
     return mean, num
     
-_RUNS_PER_SET = 1
+_RUNS_PER_SET = 2
 _START = 1
 _RUN_NVPROF = False
 

@@ -47,7 +47,10 @@ models_factory = {
   'densenet121': models.densenet121,
   'densenet169': models.densenet169,
   'efficientnet-b0': EfficientNet.from_name,
+  'efficientnet-b1': EfficientNet.from_name,
+  'efficientnet-b2': EfficientNet.from_name,
   'efficientnet-b3': EfficientNet.from_name,
+  'efficientnet-b4': EfficientNet.from_name,
 }
 
 datasets_factory = {
