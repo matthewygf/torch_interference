@@ -17,7 +17,10 @@ mobilenetv2_large_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet_
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '7']
 resnet_cmd = ['python', 'image_classifier.py', '--model', 'resnet', '--use_cuda', 'True', '--max_epochs', '7']
 eff_b0_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b0', '--use_cuda', 'True', '--max_epochs', '7']
+eff_b1_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b1', '--use_cuda', 'True', '--max_epochs', '7']
+eff_b2_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b2', '--use_cuda', 'True', '--max_epochs', '7']
 eff_b3_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b3', '--use_cuda', 'True', '--max_epochs', '7']
+eff_b4_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b4', '--use_cuda', 'True', '--max_epochs', '7']
 dense121_cmd = ['python', 'image_classifier.py', '--model', 'densenet121', '--use_cuda', 'True', '--max_epochs', '7']
 dense169_cmd = ['python', 'image_classifier.py', '--model', 'densenet169', '--use_cuda', 'True', '--max_epochs', '7']
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '6', '--task', 'pos', '--use_cuda', 'True']
@@ -38,7 +41,10 @@ models_train = {
     'googlenet_cmd': googlenet_cmd,
     'mobilenetv2_cmd': mobilenetv2_cmd,
     'mobilenetv2_large_cmd': mobilenetv2_large_cmd,
+    'efficientnetb4_cmd': eff_b4_cmd, 
     'efficientnetb3_cmd': eff_b3_cmd,
+    'efficientnetb2_cmd': eff_b2_cmd,
+    'efficientnetb1_cmd': eff_b1_cmd,
     'efficientnetb0_cmd': eff_b0_cmd,
     'densenet121_cmd': dense121_cmd,
     'densenet169_cmd': dense169_cmd,
