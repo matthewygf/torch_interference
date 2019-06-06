@@ -4,7 +4,6 @@ from torch import nn
 from torch.nn import functional as F
 
 from .utils import (
-    relu_fn,
     round_filters,
     round_repeats,
     drop_connect,
@@ -13,6 +12,11 @@ from .utils import (
     efficientnet_params,
     load_pretrained_weights,
 )
+
+class SwishActivation(nn.Sigmoid):
+    """ Swish activation function """
+    def forward(self, x):
+        return x * torch.sigmoid(x)
 
 class MBConvBlock(nn.Module):
     """
@@ -33,6 +37,7 @@ class MBConvBlock(nn.Module):
         self._bn_eps = global_params.batch_norm_epsilon
         self.has_se = (self._block_args.se_ratio is not None) and (0 < self._block_args.se_ratio <= 1)
         self.id_skip = block_args.id_skip  # skip connection and drop connect
+        self.swish_active = SwishActivation()
 
         # Expansion phase
         inp = self._block_args.input_filters  # number of input channels
@@ -70,13 +75,13 @@ class MBConvBlock(nn.Module):
         # Expansion and Depthwise Convolution
         x = inputs
         if self._block_args.expand_ratio != 1:
-            x = relu_fn(self._bn0(self._expand_conv(inputs)))
-        x = relu_fn(self._bn1(self._depthwise_conv(x)))
+            x = self.swish_active(self._bn0(self._expand_conv(inputs)))
+        x = self.swish_active(self._bn1(self._depthwise_conv(x)))
 
         # Squeeze and Excitation
         if self.has_se:
             x_squeezed = F.adaptive_avg_pool2d(x, 1)
-            x_squeezed = self._se_expand(relu_fn(self._se_reduce(x_squeezed)))
+            x_squeezed = self._se_expand(self.swish_active(self._se_reduce(x_squeezed)))
             x = torch.sigmoid(x_squeezed) * x
 
         x = self._bn2(self._project_conv(x))
@@ -109,6 +114,7 @@ class EfficientNet(nn.Module):
         assert len(blocks_args) > 0, 'block args must be greater than 0'
         self._global_params = global_params
         self._blocks_args = blocks_args
+        self.swish_active = SwishActivation()
 
         # Batch norm parameters
         bn_mom = 1 - self._global_params.batch_norm_momentum
@@ -152,7 +158,7 @@ class EfficientNet(nn.Module):
         """ Returns output of the final convolution layer """
 
         # Stem
-        x = relu_fn(self._bn0(self._conv_stem(inputs)))
+        x = self.swish_active(self._bn0(self._conv_stem(inputs)))
 
         # Blocks
         for idx, block in enumerate(self._blocks):
@@ -170,7 +176,7 @@ class EfficientNet(nn.Module):
         x = self.extract_features(inputs)
 
         # Head
-        x = relu_fn(self._bn1(self._conv_head(x)))
+        x = self.swish_active(self._bn1(self._conv_head(x)))
         x = F.adaptive_avg_pool2d(x, 1).squeeze(-1).squeeze(-1)
         if self._dropout:
             x = F.dropout(x, p=self._dropout, training=self.training)

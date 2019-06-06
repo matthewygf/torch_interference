@@ -11,20 +11,30 @@ import numpy as np
 import copy
 import models_to_run
 
+# NOTE: CNNs
+alex_cmd = ['python', 'image_classifier.py', '--model', 'alexnet', '--use_cuda', 'True', '--max_epochs', '7']
+squeezenetv1_0_cmd = ['python', 'image_classifier.py', '--model', 'squeezenet1_0', '--use_cuda', 'True', '--max_epochs', '7']
 googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True', '--max_epochs', '7']
+inceptionv3_cmd = ['python', 'image_classifier.py', '--model', 'inception_v3', '--use_cuda', 'True', '--max_epochs', '7']
 mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True', '--max_epochs', '7']
 mobilenetv2_large_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet_large', '--use_cuda', 'True', '--max_epochs', '7']
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '7']
-resnet_cmd = ['python', 'image_classifier.py', '--model', 'resnet', '--use_cuda', 'True', '--max_epochs', '7']
-eff_b0_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b0', '--use_cuda', 'True', '--max_epochs', '7']
-eff_b1_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b1', '--use_cuda', 'True', '--max_epochs', '7']
-eff_b2_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b2', '--use_cuda', 'True', '--max_epochs', '7']
-eff_b3_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b3', '--use_cuda', 'True', '--max_epochs', '7']
-eff_b4_cmd = ['python', 'image_classifier.py', '--model', 'efficientnet-b4', '--use_cuda', 'True', '--max_epochs', '7']
+resnet18_cmd = ['python', 'image_classifier.py', '--model', 'resnet18', '--use_cuda', 'True', '--max_epochs', '7']
+resnet34_cmd = ['python', 'image_classifier.py', '--model', 'resnet34', '--use_cuda', 'True', '--max_epochs', '7']
+resnet50_cmd = ['python', 'image_classifier.py', '--model', 'resnet50', '--use_cuda', 'True', '--max_epochs', '7']
+shufflenet_2_0_cmd = ['python', 'image_classifier.py', '--model', 'shufflenetv2_2_0', '--use_cuda', 'True', '--max_epochs', '7']
+shufflenet_1_0_cmd = ['python', 'image_classifier.py', '--model', 'shufflenetv2_1_0', '--use_cuda', 'True', '--max_epochs', '7']
+shufflenet_0_5_cmd = ['python', 'image_classifier.py', '--model', 'shufflenetv2_0_5', '--use_cuda', 'True', '--max_epochs', '7']
 dense121_cmd = ['python', 'image_classifier.py', '--model', 'densenet121', '--use_cuda', 'True', '--max_epochs', '7']
 dense169_cmd = ['python', 'image_classifier.py', '--model', 'densenet169', '--use_cuda', 'True', '--max_epochs', '7']
-pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '6', '--task', 'pos', '--use_cuda', 'True']
+eff_b0_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb0', '--use_cuda', 'True', '--max_epochs', '7']
+eff_b1_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb1', '--use_cuda', 'True', '--max_epochs', '7']
+eff_b2_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb2', '--use_cuda', 'True', '--max_epochs', '7']
+eff_b3_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb3', '--use_cuda', 'True', '--max_epochs', '7']
+eff_b4_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb4', '--use_cuda', 'True', '--max_epochs', '7']
 
+# NOTE: NLPs
+pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '6', '--task', 'pos', '--use_cuda', 'True']
 # NOTE: these mt tasks aren't very good , feel free to tune, most likely because of "number of vocabs".
 mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '10000', '--batch_size', '16' ,'--use_cuda', 'True']
 mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '64', '--hiddens_dim', '128',  '--task', 'mt', '--max_vocabs', '10000','--batch_size', '16', '--use_cuda', 'True']
@@ -32,24 +42,33 @@ mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_
 lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '64', '--max_len', '30', '--hiddens_dim', '64', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3']
 lm_med_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '1']
 lm_large_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '2']
-nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', '--csv',]
 
+# NOTE: MISCs
+nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', '--csv',]
 pmon_mod_cmd = ['pmon', '--csv=true', '--interval=250']
 pcie_mod_cmd = ['pcie', '--csv=true', '--interval=250']
 
 models_train = {
+    'alexnet_cmd': alex_cmd,
     'googlenet_cmd': googlenet_cmd,
+    'squeezenetv1_0_cmd': squeezenetv1_0_cmd,
+    'inceptionv3_cmd': inceptionv3_cmd,
     'mobilenetv2_cmd': mobilenetv2_cmd,
     'mobilenetv2_large_cmd': mobilenetv2_large_cmd,
+    'densenet121_cmd': dense121_cmd,
+    'densenet169_cmd': dense169_cmd,
+    'vgg19_cmd': vgg19_cmd,
+    'resnet18_cmd': resnet18_cmd,
+    'resnet34_cmd': resnet34_cmd,
+    'resnet50_cmd': resnet50_cmd,
+    'shufflenet_2_0_cmd': shufflenet_2_0_cmd,
+    'shufflenet_1_0_cmd': shufflenet_1_0_cmd,
+    'shufflenet_0_5_cmd': shufflenet_0_5_cmd,
     'efficientnetb4_cmd': eff_b4_cmd, 
     'efficientnetb3_cmd': eff_b3_cmd,
     'efficientnetb2_cmd': eff_b2_cmd,
     'efficientnetb1_cmd': eff_b1_cmd,
     'efficientnetb0_cmd': eff_b0_cmd,
-    'densenet121_cmd': dense121_cmd,
-    'densenet169_cmd': dense169_cmd,
-    'vgg19_cmd': vgg19_cmd,
-    'resnet_cmd': resnet_cmd,
     'pos_cmd': pos_cmd,
     'mt1_cmd': mt1_cmd,
     'mt2_cmd': mt2_cmd,

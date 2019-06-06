@@ -13,6 +13,7 @@ import ctypes
 import csv
 import datetime
 import utils as U
+import image_models.ops_profiler.flop_counter as counter
 
 torch.manual_seed(0)
 torch.backends.cudnn.deterministic = True
@@ -39,18 +40,26 @@ flags.mark_flag_as_required('model')
 flags.mark_flag_as_required('dataset_dir')
 
 models_factory = {
+  'alexnet': models.alexnet,
   'googlenet': models.googlenet,
+  'squeezenet1_0': models.squeezenet1_0,
+  'inception_v3': models.inception_v3,
   'mobilenet': models.mobilenet_v2,
   'mobilenet_large': models.mobilenet_v2,
-  'resnet': models.resnet50,
-  'vgg19': models.vgg19,
+  'shufflenetv2_0_5': models.shufflenet_v2_x0_5,
+  'shufflenetv2_1_0': models.shufflenet_v2_x1_0,
+  'shufflenetv2_2_0': models.shufflenet_v2_x2_0,
+  'resnet18': models.resnet18,
+  'resnet34': models.resnet34,
+  'resnet50': models.resnet50,
   'densenet121': models.densenet121,
   'densenet169': models.densenet169,
-  'efficientnet-b0': EfficientNet.from_name,
-  'efficientnet-b1': EfficientNet.from_name,
-  'efficientnet-b2': EfficientNet.from_name,
-  'efficientnet-b3': EfficientNet.from_name,
-  'efficientnet-b4': EfficientNet.from_name,
+  'efficientnet_b0': EfficientNet.from_name,
+  'efficientnet_b1': EfficientNet.from_name,
+  'efficientnet_b2': EfficientNet.from_name,
+  'efficientnet_b3': EfficientNet.from_name,
+  'efficientnet_b4': EfficientNet.from_name,
+  'vgg19': models.vgg19,
 }
 
 datasets_factory = {
@@ -94,13 +103,13 @@ def main(argv):
   _cudart = U.get_cudart()
   if _cudart is None:
     logger.warning("No cudart, probably means you do not have cuda on this machine.")
-
+  device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
   model_fn = models_factory[FLAGS.model]
   dataset_fn = datasets_factory[FLAGS.dataset]
   dataset_classes = datasets_sizes[FLAGS.dataset]
   # TODO: Really need to start to change this better soon :/
   if 'google' in FLAGS.model: 
-    model = model_fn(pretrained=False, transform_input=False, aux_logits=False, num_classes=dataset_classes)
+    model = model_fn(pretrained=False, transform_input=False, aux_logits=True, num_classes=dataset_classes)
   elif 'mobilenet_large' in FLAGS.model:
     inverted_residual_setting = [
         # t, c, n, s
@@ -113,11 +122,14 @@ def main(argv):
         [10, 320, 1, 1],
     ]
     model = model_fn(pretrained=False, num_classes=dataset_classes, inverted_residual_setting=inverted_residual_setting)
-  elif 'efficientnet' in FLAGS.model:
+  elif 'efficientnet' in FLAGS.model and 'v2' not in FLAGS.model:
     model = model_fn(FLAGS.model, {'num_classes': dataset_classes})
   else:
     model = model_fn(pretrained=False, num_classes=dataset_classes)
-  
+
+  model = model.to(device)
+  # print(counter.profile(model, input_size=(1, 3,224,224), logger=logger))
+
   compose_trans = transforms.Compose([
     transforms.ToTensor()
   ])
@@ -128,9 +140,7 @@ def main(argv):
                             batch_size=FLAGS.batch_size, 
                             shuffle=True, 
                             num_workers=2)
-  device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
 
-  model = model.to(device)
   optimizer = optim.Adam(model.parameters(), lr=0.0001)
   loss_op = torch.nn.CrossEntropyLoss()
   start_time = time.time()

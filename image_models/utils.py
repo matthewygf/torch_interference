@@ -1,5 +1,5 @@
 """
-https://github.com/lukemelas/EfficientNet-PyTorch
+Modified from https://github.com/lukemelas/EfficientNet-PyTorch
 This file contains helper functions for building the model and for loading model parameters.
 These helper functions are built to mirror those in the official TensorFlow implementation.
 """
@@ -35,12 +35,6 @@ BlockArgs = collections.namedtuple('BlockArgs', [
 GlobalParams.__new__.__defaults__ = (None,) * len(GlobalParams._fields)
 BlockArgs.__new__.__defaults__ = (None,) * len(BlockArgs._fields)
 
-
-def relu_fn(x):
-    """ Swish activation function """
-    return x * torch.sigmoid(x)
-
-
 def round_filters(filters, global_params):
     """ Calculate and round number of filters based on depth multiplier. """
     multiplier = global_params.width_coefficient
@@ -75,22 +69,31 @@ def drop_connect(inputs, p, training):
     output = inputs / keep_prob * binary_tensor
     return output
 
+class Pad2d(nn.Module):
+    def __init__(self, stride, dilation):
+        super().__init__()
+        self.sh, self.sw = stride
+        self.dh, self.dw = dilation
 
+    def forward(self, x, weight):
+        ih, iw = x.size()[-2:]
+        kh, kw = weight.size()[-2:]
+        oh, ow = math.ceil(ih / self.sh), math.ceil(iw / self.sw )
+        pad_h = max((oh - 1) * self.sh + (kh - 1) * self.dh + 1 - ih, 0)
+        pad_w = max((ow - 1) * self.sw + (kw - 1) * self.dw  + 1 - iw, 0)
+        if pad_h > 0 or pad_w > 0:
+            x = F.pad(x, [int(pad_w//2), int(pad_w - pad_w//2), int(pad_h//2), int(pad_h - pad_h//2)])
+        return x
+        
 class Conv2dSamePadding(nn.Conv2d):
     """ 2D Convolutions like TensorFlow """
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, groups=1, bias=True):
         super().__init__(in_channels, out_channels, kernel_size, stride, 0, dilation, groups, bias)
         self.stride = self.stride if len(self.stride) == 2 else [self.stride[0]]*2
+        self.pad2d = Pad2d(self.stride, self.dilation)
 
     def forward(self, x):
-        ih, iw = x.size()[-2:]
-        kh, kw = self.weight.size()[-2:]
-        sh, sw = self.stride
-        oh, ow = math.ceil(ih / sh), math.ceil(iw / sw)
-        pad_h = max((oh - 1) * self.stride[0] + (kh - 1) * self.dilation[0] + 1 - ih, 0)
-        pad_w = max((ow - 1) * self.stride[1] + (kw - 1) * self.dilation[1] + 1 - iw, 0)
-        if pad_h > 0 or pad_w > 0:
-            x = F.pad(x, [pad_w//2, pad_w - pad_w//2, pad_h//2, pad_h - pad_h//2])
+        x = self.pad2d(x, self.weight)
         return F.conv2d(x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups)
 
 
@@ -103,14 +106,14 @@ def efficientnet_params(model_name):
     """ Map EfficientNet model name to parameter coefficients. """
     params_dict = {
         # Coefficients:   width,depth,res,dropout
-        'efficientnet-b0': (1.0, 1.0, 224, 0.2),
-        'efficientnet-b1': (1.0, 1.1, 240, 0.2),
-        'efficientnet-b2': (1.1, 1.2, 260, 0.3),
-        'efficientnet-b3': (1.2, 1.4, 300, 0.3),
-        'efficientnet-b4': (1.4, 1.8, 380, 0.4),
-        'efficientnet-b5': (1.6, 2.2, 456, 0.4),
-        'efficientnet-b6': (1.8, 2.6, 528, 0.5),
-        'efficientnet-b7': (2.0, 3.1, 600, 0.5),
+        'efficientnet_b0': (1.0, 1.0, 224, 0.2),
+        'efficientnet_b1': (1.0, 1.1, 240, 0.2),
+        'efficientnet_b2': (1.1, 1.2, 260, 0.3),
+        'efficientnet_b3': (1.2, 1.4, 300, 0.3),
+        'efficientnet_b4': (1.4, 1.8, 380, 0.4),
+        'efficientnet_b5': (1.6, 2.2, 456, 0.4),
+        'efficientnet_b6': (1.8, 2.6, 528, 0.5),
+        'efficientnet_b7': (2.0, 3.1, 600, 0.5),
     }
     return params_dict[model_name]
 
