@@ -128,7 +128,7 @@ def main(argv):
     model = model_fn(pretrained=False, num_classes=dataset_classes)
 
   model = model.to(device)
-  # print(counter.profile(model, input_size=(1, 3,224,224), logger=logger))
+  # print(counter.profile(model, input_size=(1, 3,32,32), logger=logger))
 
   compose_trans = transforms.Compose([
     transforms.ToTensor()
