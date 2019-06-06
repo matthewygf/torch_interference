@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 from torch.nn.modules.conv import _ConvNd
 from ..model import MBConvBlock, SwishActivation
-from ..eff_layers import Swish, SamePadConv2d
 from ..utils import Conv2dSamePadding, Pad2d
 from .count_hooks import *
 
@@ -18,7 +17,6 @@ register_hooks = {
     # Conv2d Padding, should add neglible flop costs
     # to pad the X, as output element is still being calculated here.
     Conv2dSamePadding: count_convNd,
-    SamePadConv2d: count_convNd,
     Pad2d: count_pad2d,
     MBConvBlock: count_mbconv_misc,
 
@@ -31,7 +29,6 @@ register_hooks = {
     nn.ReLU6: count_relu,
     nn.LeakyReLU: count_relu,
     SwishActivation: count_swish,
-    Swish: count_swish,
 
     nn.MaxPool1d: count_maxpool,
     nn.MaxPool2d: count_maxpool,
