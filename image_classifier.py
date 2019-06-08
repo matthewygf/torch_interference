@@ -115,7 +115,7 @@ def main(argv):
   dataset_classes = datasets_sizes[FLAGS.dataset]
   # TODO: Really need to start to change this better soon :/
   if 'google' in FLAGS.model: 
-    model = model_fn(pretrained=False, transform_input=False, aux_logits=True, num_classes=dataset_classes)
+    model = model_fn(pretrained=False, transform_input=False, aux_logits=False, num_classes=dataset_classes)
   elif 'mobilenet_large' in FLAGS.model:
     inverted_residual_setting = [
         # t, c, n, s

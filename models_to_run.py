@@ -1,5 +1,4 @@
 sets = [
-  ['alexnet_cmd'],
   ['squeezenetv1_0_cmd'],
   ['googlenet_cmd'],
   ['inceptionv3_cmd'],
