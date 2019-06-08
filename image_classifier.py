@@ -34,6 +34,7 @@ flags.DEFINE_string('dataset', 'cifar10', 'The dataset to train with')
 flags.DEFINE_boolean('use_cuda', False, 'whether to use GPU')
 flags.DEFINE_integer('log_interval', 10, 'Batch intervals to log')
 flags.DEFINE_integer('max_epochs', 5, 'maximum number of epochs to run')
+flags.DEFINE_bool('profile_only', False, 'profile model FLOPs and Params only, not running the training procedure')
 
 flags.mark_flag_as_required('run_name')
 flags.mark_flag_as_required('model')
@@ -64,6 +65,11 @@ models_factory = {
 
 datasets_factory = {
   'cifar10': predefined_datasets.CIFAR10
+}
+
+datasets_shape = {
+  'cifar10': (3, 32, 32),
+  'imagenet': (3, 224, 224)
 }
 
 datasets_sizes = {
@@ -128,34 +134,36 @@ def main(argv):
     model = model_fn(pretrained=False, num_classes=dataset_classes)
 
   model = model.to(device)
-  # print(counter.profile(model, input_size=(1, 3,32,32), logger=logger))
 
-  compose_trans = transforms.Compose([
-    transforms.ToTensor()
-  ])
-  train_dataset = dataset_fn(FLAGS.dataset_dir, transform=compose_trans, train=True, download=True)
-  val_dataset = dataset_fn(FLAGS.dataset_dir, transform=compose_trans, train=False, download=True)
+  if FLAGS.profile_only:
+    print(counter.profile(model, input_size=(FLAGS.batch_size,) + datasets_shape[FLAGS.dataset], logger=logger))
+  else:
+    compose_trans = transforms.Compose([
+      transforms.ToTensor()
+    ])
+    train_dataset = dataset_fn(FLAGS.dataset_dir, transform=compose_trans, train=True, download=True)
+    val_dataset = dataset_fn(FLAGS.dataset_dir, transform=compose_trans, train=False, download=True)
 
-  train_loader = DataLoader(train_dataset, 
-                            batch_size=FLAGS.batch_size, 
-                            shuffle=True, 
-                            num_workers=2)
+    train_loader = DataLoader(train_dataset, 
+                              batch_size=FLAGS.batch_size, 
+                              shuffle=True, 
+                              num_workers=2)
 
-  optimizer = optim.Adam(model.parameters(), lr=0.0001)
-  loss_op = torch.nn.CrossEntropyLoss()
-  start_time = time.time()
-  try:
-    if _cudart is not None:
-      status = _cudart.cudaProfilerStart()
-    else:
-      status = None
-    for epoch in range(1, FLAGS.max_epochs+1):
-      train(logger, model, device, train_loader, optimizer, epoch, loss_op)
-  finally:
-    if status == 0:
-      _cudart.cudaProfilerStop()
-  final_time = time.time() - start_time
-  logger.info("Finished: ran for %d secs", final_time)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    loss_op = torch.nn.CrossEntropyLoss()
+    start_time = time.time()
+    try:
+      if _cudart is not None:
+        status = _cudart.cudaProfilerStart()
+      else:
+        status = None
+      for epoch in range(1, FLAGS.max_epochs+1):
+        train(logger, model, device, train_loader, optimizer, epoch, loss_op)
+    finally:
+      if status == 0:
+        _cudart.cudaProfilerStop()
+    final_time = time.time() - start_time
+    logger.info("Finished: ran for %d secs", final_time)
 if __name__ == "__main__":
   app.run(main)
 
