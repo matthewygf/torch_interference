@@ -6,6 +6,7 @@ import torchvision.datasets as predefined_datasets
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 from image_models.model import EfficientNet
+
 import torch
 import torch.optim as optim
 import time
@@ -41,10 +42,8 @@ flags.mark_flag_as_required('model')
 flags.mark_flag_as_required('dataset_dir')
 
 models_factory = {
-  'alexnet': models.alexnet,
   'googlenet': models.googlenet,
   'squeezenet1_0': models.squeezenet1_0,
-  'inception_v3': models.inception_v3,
   'mobilenet': models.mobilenet_v2,
   'mobilenet_large': models.mobilenet_v2,
   'shufflenetv2_0_5': models.shufflenet_v2_x0_5,
@@ -55,6 +54,7 @@ models_factory = {
   'resnet50': models.resnet50,
   'densenet121': models.densenet121,
   'densenet169': models.densenet169,
+  'densenet40': models.DenseNet,
   'efficientnet_b0': EfficientNet.from_name,
   'efficientnet_b1': EfficientNet.from_name,
   'efficientnet_b2': EfficientNet.from_name,
@@ -120,16 +120,19 @@ def main(argv):
     inverted_residual_setting = [
         # t, c, n, s
         [1, 16, 1, 1],
-        [10, 24, 2, 2],
-        [10, 32, 3, 2],
-        [10, 64, 4, 2],
-        [10, 96, 3, 1],
-        [10, 160, 3, 2],
-        [10, 320, 1, 1],
+        [6, 32, 2, 2],
+        [6, 64, 3, 2],
+        [6, 96, 4, 2],
+        [6, 128, 4, 1],
+        [6, 256, 2, 2],
+        [6, 512, 2, 1],
+        [6, 1024, 2, 1],
     ]
     model = model_fn(pretrained=False, num_classes=dataset_classes, inverted_residual_setting=inverted_residual_setting)
   elif 'efficientnet' in FLAGS.model and 'v2' not in FLAGS.model:
     model = model_fn(FLAGS.model, {'num_classes': dataset_classes})
+  elif 'densenet40' in FLAGS.model:
+    model = model_fn(num_classes=dataset_classes, growth_rate=12, num_init_features=16, block_config=(12,12,12))
   else:
     model = model_fn(pretrained=False, num_classes=dataset_classes)
 
