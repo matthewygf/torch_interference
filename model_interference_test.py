@@ -59,6 +59,7 @@ models_train = {
     'mobilenetv2_cmd': mobilenetv2_cmd,
     'mobilenetv2_large_cmd': mobilenetv2_large_cmd,
     'densenet121_cmd': dense121_cmd,
+    'dense161_cmd': dense161_cmd,
     'densenet169_cmd': dense169_cmd,
     'vgg19_cmd': vgg19_cmd,
     'resnet18_cmd': resnet18_cmd,
