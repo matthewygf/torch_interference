@@ -6,6 +6,7 @@ import torchvision.datasets as predefined_datasets
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 from image_models.model import EfficientNet
+from image_models.resnext import *
 
 import torch
 import torch.optim as optim
@@ -49,10 +50,12 @@ models_factory = {
   'shufflenetv2_0_5': models.shufflenet_v2_x0_5,
   'shufflenetv2_1_0': models.shufflenet_v2_x1_0,
   'shufflenetv2_2_0': models.shufflenet_v2_x2_0,
+  'resnext29_2x64d': ResNeXt29_2x64d,
   'resnet18': models.resnet18,
   'resnet34': models.resnet34,
   'resnet50': models.resnet50,
   'densenet121': models.densenet121,
+  'densenet161': models.densenet161,
   'densenet169': models.densenet169,
   'densenet40': models.DenseNet,
   'efficientnet_b0': EfficientNet.from_name,
@@ -151,6 +154,11 @@ def main(argv):
                               batch_size=FLAGS.batch_size, 
                               shuffle=True, 
                               num_workers=2)
+    val_loader = DataLoader(val_dataset, 
+                            batch_size=FLAGS.batch_size, 
+                            shuffle=False, 
+                            num_workers=2)
+    
 
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
     loss_op = torch.nn.CrossEntropyLoss()
@@ -162,6 +170,8 @@ def main(argv):
         status = None
       for epoch in range(1, FLAGS.max_epochs+1):
         train(logger, model, device, train_loader, optimizer, epoch, loss_op)
+        #TODO: validation.
+        # don't care about accuracy for now.
     finally:
       if status == 0:
         _cudart.cudaProfilerStop()
