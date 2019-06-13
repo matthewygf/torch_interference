@@ -22,6 +22,7 @@ mobilenetv2_large_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet_
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size',str(_default_batch_size)]
 resnet18_cmd = ['python', 'image_classifier.py', '--model', 'resnet18', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 resnext29_2x64_cmd = ['python', 'image_classifier.py', '--model', 'resnext29_2x64d', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
+resnext11_2x64_cmd = ['python', 'image_classifier.py', '--model', 'resnext11_2x64d', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 resnet34_cmd = ['python', 'image_classifier.py', '--model', 'resnet34', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 resnet50_cmd = ['python', 'image_classifier.py', '--model', 'resnet50', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 shufflenet_2_0_cmd = ['python', 'image_classifier.py', '--model', 'shufflenetv2_2_0', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
@@ -66,6 +67,7 @@ models_train = {
     'resnet34_cmd': resnet34_cmd,
     'resnet50_cmd': resnet50_cmd,
     'resnext29_2x64_cmd': resnext29_2x64_cmd,
+    'resnext11_2x64_cmd': resnext11_2x64_cmd,
     'shufflenet_2_0_cmd': shufflenet_2_0_cmd,
     'shufflenet_1_0_cmd': shufflenet_1_0_cmd,
     'shufflenet_0_5_cmd': shufflenet_0_5_cmd,

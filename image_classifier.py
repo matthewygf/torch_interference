@@ -50,6 +50,7 @@ models_factory = {
   'shufflenetv2_0_5': models.shufflenet_v2_x0_5,
   'shufflenetv2_1_0': models.shufflenet_v2_x1_0,
   'shufflenetv2_2_0': models.shufflenet_v2_x2_0,
+  'resnext11_2x64d': ResNext11_2x64d,
   'resnext29_2x64d': ResNeXt29_2x64d,
   'resnet18': models.resnet18,
   'resnet34': models.resnet34,
@@ -129,7 +130,6 @@ def main(argv):
         [6, 128, 4, 1],
         [6, 256, 2, 2],
         [6, 512, 2, 1],
-        [6, 1024, 2, 1],
     ]
     model = model_fn(pretrained=False, num_classes=dataset_classes, inverted_residual_setting=inverted_residual_setting)
   elif 'efficientnet' in FLAGS.model and 'v2' not in FLAGS.model:
