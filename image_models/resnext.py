@@ -22,7 +22,7 @@ class Block(nn.Module):
         self.bn2 = nn.BatchNorm2d(group_width)
         self.conv3 = nn.Conv2d(group_width, self.expansion*group_width, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(self.expansion*group_width)
-
+        self.relu = nn.ReLU()
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != self.expansion*group_width:
             self.shortcut = nn.Sequential(
@@ -31,11 +31,11 @@ class Block(nn.Module):
             )
 
     def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = F.relu(self.bn2(self.conv2(out)))
+        out = self.relu(self.bn1(self.conv1(x)))
+        out = self.relu(self.bn2(self.conv2(out)))
         out = self.bn3(self.conv3(out))
         out += self.shortcut(x)
-        out = F.relu(out)
+        out = self.relu(out)
         return out
 
 
@@ -44,8 +44,9 @@ class ResNeXt(nn.Module):
         super(ResNeXt, self).__init__()
         self.cardinality = cardinality
         self.bottleneck_width = bottleneck_width
+        self.relu = nn.ReLU()
         self.in_planes = 64
-
+        self.avgpool_2d = nn.AvgPool2d(8)
         self.conv1 = nn.Conv2d(3, 64, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.layer1 = self._make_layer(num_blocks[0], 1)
@@ -65,12 +66,12 @@ class ResNeXt(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
         # out = self.layer4(out)
-        out = F.avg_pool2d(out, 8)
+        out = self.avgpool_2d(out)
         out = out.view(out.size(0), -1)
         out = self.linear(out)
         return out

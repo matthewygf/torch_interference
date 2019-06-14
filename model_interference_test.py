@@ -12,7 +12,7 @@ import copy
 import models_to_run
 
 # NOTE: CNNs
-_default_batch_size = 128
+_default_batch_size = 256
 alex_cmd = ['python', 'image_classifier.py', '--model', 'alexnet', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 squeezenetv1_0_cmd = ['python', 'image_classifier.py', '--model', 'squeezenet1_0', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
@@ -39,7 +39,7 @@ eff_b1_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb1', '--u
 eff_b2_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb2', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 eff_b3_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb3', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 eff_b4_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb4', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-
+pnasb_cmd = ['python', 'image_classifier.py', '--model', 'pnasb', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 # NOTE: NLPs
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '6', '--task', 'pos', '--use_cuda', 'True']
 # NOTE: these mt tasks aren't very good , feel free to tune, most likely because of "number of vocabs".
@@ -82,6 +82,7 @@ models_train = {
     'efficientnetb2_cmd': eff_b2_cmd,
     'efficientnetb1_cmd': eff_b1_cmd,
     'efficientnetb0_cmd': eff_b0_cmd,
+    'pnasb_cmd': pnasb_cmd,
     'pos_cmd': pos_cmd,
     'mt1_cmd': mt1_cmd,
     'mt2_cmd': mt2_cmd,

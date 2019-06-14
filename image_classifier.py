@@ -7,6 +7,7 @@ from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 from image_models.model import EfficientNet
 from image_models.resnext import *
+from image_models.pnasnet import *
 
 import torch
 import torch.optim as optim
@@ -70,6 +71,7 @@ models_factory = {
   'vgg11': models.vgg11,
   'vgg11_bn': models.vgg11_bn,
   'vgg19': models.vgg19,
+  'pnasb': PNASNetB 
 }
 
 datasets_factory = {
