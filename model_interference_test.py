@@ -19,9 +19,12 @@ googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use
 inceptionv3_cmd = ['python', 'image_classifier.py', '--model', 'inception_v3', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True', '--max_epochs', '7','--batch_size', str(_default_batch_size)]
 mobilenetv2_large_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet_large', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
+vgg11_cmd = ['python', 'image_classifier.py', '--model', 'vgg11', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size',str(_default_batch_size)]
+vgg11bn_cmd = ['python', 'image_classifier.py', '--model', 'vgg11_bn', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size',str(_default_batch_size)]
 vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size',str(_default_batch_size)]
 resnet18_cmd = ['python', 'image_classifier.py', '--model', 'resnet18', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 resnext29_2x64_cmd = ['python', 'image_classifier.py', '--model', 'resnext29_2x64d', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
+resnext11_2x16_cmd = ['python', 'image_classifier.py', '--model', 'resnext11_2x16d', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 resnext11_2x64_cmd = ['python', 'image_classifier.py', '--model', 'resnext11_2x64d', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 resnet34_cmd = ['python', 'image_classifier.py', '--model', 'resnet34', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 resnet50_cmd = ['python', 'image_classifier.py', '--model', 'resnet50', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
@@ -62,12 +65,15 @@ models_train = {
     'densenet121_cmd': dense121_cmd,
     'densenet161_cmd':dense161_cmd, 
     'densenet169_cmd': dense169_cmd,
+    'vgg11_cmd': vgg11_cmd,
+    'vgg11bn_cmd': vgg11bn_cmd,
     'vgg19_cmd': vgg19_cmd,
     'resnet18_cmd': resnet18_cmd,
     'resnet34_cmd': resnet34_cmd,
     'resnet50_cmd': resnet50_cmd,
     'resnext29_2x64_cmd': resnext29_2x64_cmd,
     'resnext11_2x64_cmd': resnext11_2x64_cmd,
+    'resnext11_2x16_cmd': resnext11_2x16_cmd,
     'shufflenet_2_0_cmd': shufflenet_2_0_cmd,
     'shufflenet_1_0_cmd': shufflenet_1_0_cmd,
     'shufflenet_0_5_cmd': shufflenet_0_5_cmd,

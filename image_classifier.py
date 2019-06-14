@@ -50,6 +50,9 @@ models_factory = {
   'shufflenetv2_0_5': models.shufflenet_v2_x0_5,
   'shufflenetv2_1_0': models.shufflenet_v2_x1_0,
   'shufflenetv2_2_0': models.shufflenet_v2_x2_0,
+  'resnext11_2x16d': ResNext11_2x16d,
+  'resnext20_2x16d': ResNext20_2x16d,
+  'resnext20_2x32d': ResNext20_2x32d,
   'resnext11_2x64d': ResNext11_2x64d,
   'resnext29_2x64d': ResNeXt29_2x64d,
   'resnet18': models.resnet18,
@@ -64,6 +67,8 @@ models_factory = {
   'efficientnet_b2': EfficientNet.from_name,
   'efficientnet_b3': EfficientNet.from_name,
   'efficientnet_b4': EfficientNet.from_name,
+  'vgg11': models.vgg11,
+  'vgg11_bn': models.vgg11_bn,
   'vgg19': models.vgg19,
 }
 

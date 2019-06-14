@@ -75,6 +75,16 @@ class ResNeXt(nn.Module):
         out = self.linear(out)
         return out
 
+
+def ResNext20_2x32d(pretrained=False, num_classes=10):
+    return ResNeXt(num_blocks=[2,2,2], cardinality=2, bottleneck_width=32)
+
+def ResNext20_2x16d(pretrained=False, num_classes=10):
+    return ResNeXt(num_blocks=[2,2,2], cardinality=2, bottleneck_width=16)
+
+def ResNext11_2x16d(pretrained=False, num_classes=10):
+    return ResNeXt(num_blocks=[1,1,1], cardinality=2, bottleneck_width=16)
+
 def ResNext11_2x64d(pretrained=False, num_classes=10):
     return ResNeXt(num_blocks=[1,1,1], cardinality=2, bottleneck_width=64)
 
