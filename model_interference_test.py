@@ -12,7 +12,7 @@ import copy
 import models_to_run
 
 # NOTE: CNNs
-_default_batch_size = 256
+_default_batch_size = 512
 alex_cmd = ['python', 'image_classifier.py', '--model', 'alexnet', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 squeezenetv1_0_cmd = ['python', 'image_classifier.py', '--model', 'squeezenet1_0', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
 googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]

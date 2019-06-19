@@ -1,7 +1,6 @@
 sets = [
   ['squeezenetv1_0_cmd'],
   ['googlenet_cmd'],
-  ['inceptionv3_cmd'],
   ['mobilenetv2_cmd'],
   ['mobilenetv2_large_cmd'],
   ['densenet121_cmd'],
