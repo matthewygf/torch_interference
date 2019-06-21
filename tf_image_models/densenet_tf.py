@@ -104,8 +104,10 @@ class DenseNetTF(tf.keras.Model):
       ])
     else:
       # smaller densenet, e.g. for cifar10
-      self.features = tf.keras.layers.Conv2D(initial_features, initial_kernel_size, initial_stride, 'same', data_format=data_format, use_bias=False, kernel_initializer='he_normal', input_shape=input_shape)
-
+      self.features = tf.keras.Sequential([
+        tf.keras.layers.Conv2D(initial_features, initial_kernel_size, initial_stride, 'same', data_format=data_format, use_bias=False, kernel_initializer='he_normal', input_shape=input_shape)
+      ])
+      
     # Dense blocks
     num_features = initial_features
     for i, num_layers in enumerate(blocks_config):
