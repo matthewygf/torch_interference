@@ -21,7 +21,7 @@ models_factory = {
 
 def _transpose_data(data):
   images, labels = data['image'], data['label']
-  images = tf.transpose(images, perm=[2,0,1])
+  images = tf.transpose(images, perm=[0,3,2,1])
   return {'image': images, 'label': labels}
 
 def main(_):
@@ -46,11 +46,12 @@ def main(_):
   test_data = test_data.repeat()
 
   data_format = 'channels_first' if gpu_available else 'channels_last'
+
   # NOTE: update to v1 compat get_ouput_xxxx when using v2
   model = models_factory[FLAGS.model](
     info.features['label'].num_classes, 
     data_format=data_format, 
-    input_shape=train_data.output_shapes['image'][1:])
+    input_shape=tf.compat.v1.data.get_output_shapes(train_data)['image'][1:])
 
   # TODO: TF KERAS CALLBACK LEARNING RATE SCHEDULER
   model.compile(optimizer=tf.train.GradientDescentOptimizer(0.001),

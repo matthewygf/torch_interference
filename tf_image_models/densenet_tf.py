@@ -85,7 +85,7 @@ class TransitionBlockTF(tf.keras.layers.Layer):
     self.bn_axis = 1 if data_format == 'channels_first' else -1
     self.norm = tf.keras.layers.BatchNormalization(axis=self.bn_axis)
     self.relu = tf.keras.layers.ReLU()
-    self.conv = tf.keras.layers.Conv2D(num_output_features, 1, 1, use_bias=False)
+    self.conv = tf.keras.layers.Conv2D(num_output_features, 1, 1, use_bias=False, data_format=data_format)
     self.pool = tf.keras.layers.AvgPool2D(2, 2, data_format=data_format)
   
   def call(self, inputs):
@@ -135,7 +135,7 @@ class DenseNetTF(tf.keras.Model):
 
       # add transition layers
       if i != len(blocks_config) - 1:
-        trans_layer = TransitionBlockTF(num_features // 2)
+        trans_layer = TransitionBlockTF(num_features // 2, data_format=data_format)
         num_features = num_features // 2
     
     # final batch norm
