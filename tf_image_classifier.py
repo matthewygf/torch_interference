@@ -66,7 +66,8 @@ def main(_):
 
   model_args = dict(
     classes=info.features['label'].num_classes, 
-    input_shape=tf.compat.v1.data.get_output_shapes(train_data)['image'][1:]
+    input_shape=tf.compat.v1.data.get_output_shapes(train_data)['image'][1:],
+    weights=None
   )
 
   if FLAGS.use_keras_defined:
