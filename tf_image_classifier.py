@@ -10,6 +10,7 @@ flags.DEFINE_string('dataset', 'cifar10', 'The dataset to train with')
 flags.DEFINE_string('dataset_dir', 'data', 'Dataset directory')
 flags.DEFINE_integer('batch_size', 64, 'Batch size of the model training')
 flags.DEFINE_integer('max_epochs', 5, 'maximum number of epochs to run')
+flags.DEFINE_bool('use_keras_defined', False, 'use keras defined models')
 flags.DEFINE_string('model', None, 'The model you want to test')
 
 flags.mark_flag_as_required('dataset')
@@ -19,7 +20,17 @@ models_factory = {
   # TODO: OOM
   'densenet121': densenet121,
   'densenet40': densenet40,
+}
 
+keras_models_factory = {
+  "vgg16": tf.keras.applications.VGG16,
+  "vgg19": tf.keras.applications.VGG19,
+  "mobilenet": tf.keras.applications.MobileNet,
+  "densenet121": tf.keras.applications.DenseNet121,
+  "densenet169": tf.keras.applications.DenseNet169,
+  "densenet201": tf.keras.applications.DenseNet201,
+  "nasnetlarge": tf.keras.applications.NASNetLarge,
+  "nasnetmobile": tf.keras.applications.NASNetMobile,
 }
 
 def _transpose_data(data):
@@ -51,11 +62,20 @@ def main(_):
 
   data_format = 'channels_first' if gpu_available else 'channels_last'
 
+  m_factory = keras_models_factory if FLAGS.use_keras_defined else models_factory
+
+  model_args = dict(
+    classes=info.features['label'].num_classes, 
+    input_shape=tf.compat.v1.data.get_output_shapes(train_data)['image'][1:]
+  )
+
+  if FLAGS.use_keras_defined:
+    tf.compat.v1.logging.info("using keras built-in models")
+  else:
+    model_args.update({'data_format': data_format})
+
   # NOTE: update to v1 compat get_ouput_xxxx when using v2
-  model = models_factory[FLAGS.model](
-    info.features['label'].num_classes, 
-    data_format=data_format, 
-    input_shape=tf.compat.v1.data.get_output_shapes(train_data)['image'][1:])
+  model = m_factory[FLAGS.model](model_args)
 
   # TODO: TF KERAS CALLBACK LEARNING RATE SCHEDULER
   model.compile(optimizer=tf.train.GradientDescentOptimizer(0.001),

@@ -84,10 +84,10 @@ class TransitionBlockTF(tf.keras.layers.Layer):
     return x
 
 class DenseNetTF(tf.keras.Model):
-  def __init__(self, num_classes=10, is_training=True,
+  def __init__(self, classes=10, is_training=True,
                initial_features=16, initial_kernel_size=3, initial_stride = 1,
                blocks_config=None, growth_rate=12, drop_rate=.0, bn_size=4, 
-               data_format='channels_first', input_shape=None):
+               weights=None, data_format='channels_first', input_shape=None):
 
     super(DenseNetTF, self).__init__()
     self.bn_axis = 1 if data_format == 'channels_first' else -1
@@ -138,7 +138,7 @@ class DenseNetTF(tf.keras.Model):
     self.features.add(tf.keras.layers.GlobalAvgPool2D(data_format))
 
     # Linear layer
-    self.classifier = tf.keras.layers.Dense(num_classes, activation='softmax')
+    self.classifier = tf.keras.layers.Dense(classes, activation='softmax')
   
   def call(self, inputs):
     x = self.features(inputs['image'])
@@ -147,8 +147,8 @@ class DenseNetTF(tf.keras.Model):
     return x
 
 #NOTE: haven't done any loading weights, save weights
-def densenet121(num_classes, **kwargs):
-  return DenseNetTF(num_classes, blocks_config=(6,12,24,16), growth_rate=32, initial_features=64, **kwargs)
+def densenet121(**kwargs):
+  return DenseNetTF(blocks_config=(6,12,24,16), growth_rate=32, initial_features=64, **kwargs)
 
-def densenet40(num_classes, **kwargs):
-  return DenseNetTF(num_classes, blocks_config=(12,12,12), growth_rate=12, initial_features=16, **kwargs)
+def densenet40(**kwargs):
+  return DenseNetTF(blocks_config=(12,12,12), growth_rate=12, initial_features=16, **kwargs)
