@@ -68,8 +68,8 @@ def main(_):
 
   steps_per_epoch = info.splits['train'].num_examples // FLAGS.batch_size + 1
   valid_steps = info.splits['test'].num_examples // FLAGS.batch_size + 1
-  model.fit(train_data, epochs=FLAGS.max_epochs, steps_per_epoch=steps_per_epoch,
-            validation_data=test_data, validation_steps=valid_steps)
+  model.fit(train_data, epochs=FLAGS.max_epochs, steps_per_epoch=steps_per_epoch)
+            # validation_data=test_data, validation_steps=valid_steps) NOTE: THIS IS ERRORING :/
 
   print(model.summary())
 
