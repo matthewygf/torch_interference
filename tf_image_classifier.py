@@ -19,6 +19,11 @@ models_factory = {
   'densenet121': densenet121
 }
 
+def _transpose_data(data):
+  images, labels = data['image'], data['label']
+  images = tf.transpose(images, perm=[2,0,1])
+  return {'image': images, 'label': labels}
+
 def main(_):
 
   data, info = tfds.load(FLAGS.dataset, data_dir=FLAGS.dataset_dir, with_info=True)
@@ -34,12 +39,8 @@ def main(_):
   is_channel_last = info.features['image'].shape[-1] == 3
   if gpu_available and is_channel_last:
     # then we transpose to channel first
-    train_data = train_data.map(
-      lambda x : tf.transpose(x, perm=[2, 0, 1])
-    )
-    test_data = test_data.map(
-      lambda x : tf.transpose(x, perm=[2, 0, 1])
-    )
+    train_data = train_data.map(_transpose_data)
+    test_data = test_data.map(_transpose_data)
   
   train_data = train_data.repeat()
   test_data = test_data.repeat()
