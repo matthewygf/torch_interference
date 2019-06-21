@@ -4,18 +4,6 @@
 
 import tensorflow as tf
 
-tf.keras.backend.clear_session()
-
-# NOTE: default cifar10 configuration
-# 3 dense blocks, 
-# 40 depth,
-# num Layers first_kernel, second_kernel, stride
-blocks_config = [ 
-                  (12, 1, 3, 1),
-                  (12, 1, 3, 1),
-                  (12, 1, 3, 1)
-                ]
-
 class DenseLayerTF(tf.keras.layers.Layer):
   # NOTE: haven't implemented memory efficient style, see pytorch vision
   def __init__(self,
@@ -36,7 +24,7 @@ class DenseLayerTF(tf.keras.layers.Layer):
     # 3x3 Conv
     self.norm2 = tf.keras.layers.BatchNormalization(axis=self.bn_axis)
     self.padd2 = tf.keras.layers.ZeroPadding2D(padding=1, data_format=data_format)
-    self.conv2 = tf.keras.layers.Conv2D(growth_rate, 3, 1)
+    self.conv2 = tf.keras.layers.Conv2D(growth_rate, 3, 1, data_format=data_format)
   
   def call(self, inputs):
     x = self.norm1(inputs)
@@ -159,3 +147,6 @@ class DenseNetTF(tf.keras.Model):
 #NOTE: haven't done any loading weights, save weights
 def densenet121(num_classes, **kwargs):
   return DenseNetTF(num_classes, blocks_config=(6,12,24,16), growth_rate=32, initial_features=64, **kwargs)
+
+def densenet40(num_classes, **kwargs):
+  return DenseNetTF(num_classes, blocks_config=(12,12,12), growth_rate=12, initial_features=16, **kwargs)

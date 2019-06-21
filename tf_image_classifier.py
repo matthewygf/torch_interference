@@ -16,7 +16,10 @@ flags.mark_flag_as_required('dataset')
 flags.mark_flag_as_required('dataset_dir')
 
 models_factory = {
-  'densenet121': densenet121
+  # TODO: OOM
+  'densenet121': densenet121,
+  'densenet40': densenet40,
+
 }
 
 def _transpose_data(data):
@@ -25,6 +28,7 @@ def _transpose_data(data):
   return {'image': images, 'label': labels}
 
 def main(_):
+  tf.keras.backend.clear_session()
 
   data, info = tfds.load(FLAGS.dataset, data_dir=FLAGS.dataset_dir, with_info=True)
   train_data, test_data = data['train'], data['test']
@@ -55,8 +59,8 @@ def main(_):
 
   # TODO: TF KERAS CALLBACK LEARNING RATE SCHEDULER
   model.compile(optimizer=tf.train.GradientDescentOptimizer(0.001),
-                loss='categorical_crossentropy',
-                metrics=['accuracy'])
+                loss='categorical_crossentropy',)
+                # metrics=['accuracy']) NOTE: ERROR Here, not sure why :/ TF  1.14
 
   steps_per_epoch = info.splits['train'].num_examples // FLAGS.batch_size + 1
   valid_steps = info.splits['test'].num_examples // FLAGS.batch_size + 1
@@ -64,6 +68,7 @@ def main(_):
             validation_data=test_data, validation_steps=valid_steps)
 
   print(model.summary())
+
 
 if __name__ == "__main__":
   app.run(main)
