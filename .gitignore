@@ -3,3 +3,4 @@ cifar-10*
 data
 __pycache__
 *.tsv
+preprocess*
