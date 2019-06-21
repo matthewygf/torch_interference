@@ -83,30 +83,28 @@ class TransitionBlockTF(tf.keras.layers.Layer):
     x = self.pool(x)
     return x
 
+
 class DenseNetTF(tf.keras.Model):
-  def __init__(self, classes=10, is_training=True,
+  def __init__(self, name, classes=10, is_training=True,
                initial_features=16, initial_kernel_size=3, initial_stride = 1,
                blocks_config=None, growth_rate=12, drop_rate=.0, bn_size=4, 
                weights=None, data_format='channels_first', input_shape=None):
 
-    super(DenseNetTF, self).__init__()
+    super(DenseNetTF, self).__init__(name='densenet'+name)
     self.bn_axis = 1 if data_format == 'channels_first' else -1
-
+    self.num_classes = classes
+    self.features = tf.keras.Sequential()
     if len(blocks_config) > 3:
       # bigger densenet
-      self.features = tf.keras.Sequential([
-        tf.keras.layers.ZeroPadding2D(padding=3, data_format=data_format, name='feature_zero_pad', input_shape=input_shape),
-        tf.keras.layers.Conv2D(initial_features, initial_kernel_size, initial_stride, data_format=data_format, use_bias=False, kernel_initializer='he_normal', name='conv1'),
-        tf.keras.layers.BatchNormalization(axis=self.bn_axis),
-        tf.keras.layers.ReLU(),
-        tf.keras.layers.ZeroPadding2D(padding=1, data_format=data_format, name='pool1_zero_pad'),
-        tf.keras.layers.MaxPool2D(pool_size=3, strides=2, padding='same')
-      ])
+      self.features.add(tf.keras.layers.ZeroPadding2D(padding=3, data_format=data_format, name='feature_zero_pad', input_shape=input_shape))
+      self.features.add(tf.keras.layers.Conv2D(initial_features, initial_kernel_size, initial_stride, data_format=data_format, use_bias=False, kernel_initializer='he_normal', name='conv1'))
+      self.features.add(tf.keras.layers.BatchNormalization(axis=self.bn_axis))
+      self.features.add(tf.keras.layers.ReLU())
+      self.features.add(tf.keras.layers.ZeroPadding2D(padding=1, data_format=data_format, name='pool1_zero_pad'))
+      self.features.add(tf.keras.layers.MaxPool2D(pool_size=3, strides=2, padding='same'))
     else:
       # smaller densenet, e.g. for cifar10
-      self.features = tf.keras.Sequential([
-        tf.keras.layers.Conv2D(initial_features, initial_kernel_size, initial_stride, 'same', data_format=data_format, use_bias=False, kernel_initializer='he_normal', input_shape=input_shape)
-      ])
+      self.features.add(tf.keras.layers.Conv2D(initial_features, initial_kernel_size, initial_stride, 'same', data_format=data_format, use_bias=False, kernel_initializer='he_normal', input_shape=input_shape))
       
     # Dense blocks
     num_features = initial_features
@@ -148,7 +146,7 @@ class DenseNetTF(tf.keras.Model):
 
 #NOTE: haven't done any loading weights, save weights
 def densenet121(**kwargs):
-  return DenseNetTF(blocks_config=(6,12,24,16), growth_rate=32, initial_features=64, **kwargs)
+  return DenseNetTF('121', blocks_config=(6,12,24,16), growth_rate=32, initial_features=64, **kwargs)
 
 def densenet40(**kwargs):
-  return DenseNetTF(blocks_config=(12,12,12), growth_rate=12, initial_features=16, **kwargs)
+  return DenseNetTF('40', blocks_config=(12,12,12), growth_rate=12, initial_features=16, **kwargs)
