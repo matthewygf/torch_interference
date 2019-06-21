@@ -101,7 +101,7 @@ class DenseNetTF(tf.keras.Model):
       self.features.add(tf.keras.layers.BatchNormalization(axis=self.bn_axis))
       self.features.add(tf.keras.layers.ReLU())
       self.features.add(tf.keras.layers.ZeroPadding2D(padding=1, data_format=data_format, name='pool1_zero_pad'))
-      self.features.add(tf.keras.layers.MaxPool2D(pool_size=3, strides=2, padding='same'))
+      self.features.add(tf.keras.layers.MaxPool2D(pool_size=3, strides=2, padding='same', data_format=data_format))
     else:
       # smaller densenet, e.g. for cifar10
       self.features.add(tf.keras.layers.Conv2D(initial_features, initial_kernel_size, initial_stride, 'same', data_format=data_format, use_bias=False, kernel_initializer='he_normal', input_shape=input_shape))

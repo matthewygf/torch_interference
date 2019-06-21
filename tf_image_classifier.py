@@ -3,6 +3,7 @@ import tensorflow_datasets as tfds
 from absl import app
 from absl import flags
 from tf_image_models.densenet_tf import *
+from tf_image_models.vgg import *
 
 FLAGS = flags.FLAGS
 
@@ -18,7 +19,9 @@ flags.mark_flag_as_required('dataset_dir')
 models_factory = {
   # TODO: OOM
   'densenet121': densenet121,
+  # TODO: BROKEN :/
   'densenet40': densenet40,
+  'vgg19': vgg19
 }
 
 def _transpose_data(data):
@@ -51,7 +54,7 @@ def main(_):
   data_format = 'channels_first' if gpu_available else 'channels_last'
   input_shape = tf.compat.v1.data.get_output_shapes(train_data)['image'][1:]
   model_args = dict(
-    classes=info.features['label'].num_classes, 
+    num_classes=info.features['label'].num_classes, 
     input_shape=input_shape,
     data_format=data_format
   )
@@ -61,14 +64,14 @@ def main(_):
   # TODO: TF KERAS CALLBACK LEARNING RATE SCHEDULER
   model.compile(optimizer=tf.train.GradientDescentOptimizer(0.001),
                 loss=tf.keras.losses.categorical_crossentropy,
-                metrics=[tf.keras.metrics.categorical_accuracy]) 
+                metrics=[tf.keras.metrics.Accuracy()]) 
 
   steps_per_epoch = info.splits['train'].num_examples // FLAGS.batch_size + 1
   valid_steps = info.splits['test'].num_examples // FLAGS.batch_size + 1
   model.fit(train_data, epochs=FLAGS.max_epochs, steps_per_epoch=steps_per_epoch,
             validation_data=test_data, validation_steps=valid_steps)
 
-  # print(model.summary())
+  print(model.summary())
 
   # Clear the session explicitly to avoid session delete error
   tf.keras.backend.clear_session()
