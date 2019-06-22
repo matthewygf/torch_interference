@@ -30,8 +30,7 @@ def one_hot(data, num_classes):
   labels = tf.keras.backend.one_hot(labels, num_classes)
   return (images, labels)
 
-def _transpose_data(data):
-  images, labels = data[0], data[1]
+def _transpose_data(images, labels):
   images = tf.transpose(images, perm=[0,3,2,1])
   return (images, labels)
 
