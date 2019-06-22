@@ -72,14 +72,14 @@ def main(_):
   # TODO: TF KERAS CALLBACK LEARNING RATE SCHEDULER
   model.compile(optimizer=tf.train.GradientDescentOptimizer(0.001),
                 loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
-                metrics=[tf.keras.metrics.Accuracy()]) 
+                metrics=[tf.keras.metrics.CategoricalAccuracy()]) 
 
   steps_per_epoch = info.splits['train'].num_examples // FLAGS.batch_size + 1
   valid_steps = info.splits['test'].num_examples // FLAGS.batch_size + 1
   
   # NOTE: KERAS has to use tuple, when feeding tf.data.dataset
-  model.fit(train_data, epochs=FLAGS.max_epochs, steps_per_epoch=steps_per_epoch)
-            # validation_data=test_data, validation_steps=valid_steps) NOTE: THIS IS ERRORING :/
+  model.fit(train_data, epochs=FLAGS.max_epochs, steps_per_epoch=steps_per_epoch,
+            validation_data=test_data, validation_steps=valid_steps)
 
   print(model.summary())
 
