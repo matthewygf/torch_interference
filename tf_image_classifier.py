@@ -24,6 +24,11 @@ models_factory = {
   'vgg19': vgg19
 }
 
+def one_hot(data, num_classes):
+  images, labels = data['image'], data['label']
+  labels = tf.keras.backend.one_hot(labels, num_classes)
+  return {'image': images, 'label': labels}
+
 def _transpose_data(data):
   images, labels = data['image'], data['label']
   images = tf.transpose(images, perm=[0,3,2,1])
@@ -40,6 +45,10 @@ def main(_):
 
   train_data = train_data.shuffle(FLAGS.batch_size).batch(FLAGS.batch_size)
   test_data = test_data.shuffle(FLAGS.batch_size).batch(FLAGS.batch_size)
+
+
+  train_data = train_data.map(lambda x : one_hot(x, info.features['label'].num_classes))
+  test_data = test_data.map(lambda x : one_hot(x, info.features['label'].num_classes))
 
   # NOTE: CHECK FOR CHANNEL LAST
   is_channel_last = info.features['image'].shape[-1] == 3
@@ -63,7 +72,7 @@ def main(_):
   model = models_factory[FLAGS.model](**model_args)
   # TODO: TF KERAS CALLBACK LEARNING RATE SCHEDULER
   model.compile(optimizer=tf.train.GradientDescentOptimizer(0.001),
-                loss=tf.keras.losses.categorical_crossentropy,
+                loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
                 metrics=[tf.keras.metrics.Accuracy()]) 
 
   steps_per_epoch = info.splits['train'].num_examples // FLAGS.batch_size + 1
