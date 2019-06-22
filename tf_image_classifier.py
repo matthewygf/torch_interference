@@ -24,15 +24,16 @@ models_factory = {
   'vgg19': vgg19
 }
 
+# NOTE: KERAS has to use tuple dataset.
 def one_hot(data, num_classes):
   images, labels = data['image'], data['label']
   labels = tf.keras.backend.one_hot(labels, num_classes)
-  return {'image': images, 'label': labels}
+  return (images, labels)
 
 def _transpose_data(data):
   images, labels = data['image'], data['label']
   images = tf.transpose(images, perm=[0,3,2,1])
-  return {'image': images, 'label': labels}
+  return (images, labels)
 
 def main(_):
   tf.keras.backend.clear_session()
@@ -45,7 +46,6 @@ def main(_):
 
   train_data = train_data.shuffle(FLAGS.batch_size).batch(FLAGS.batch_size)
   test_data = test_data.shuffle(FLAGS.batch_size).batch(FLAGS.batch_size)
-
 
   train_data = train_data.map(lambda x : one_hot(x, info.features['label'].num_classes))
   test_data = test_data.map(lambda x : one_hot(x, info.features['label'].num_classes))
@@ -61,7 +61,7 @@ def main(_):
   test_data = test_data.repeat()
 
   data_format = 'channels_first' if gpu_available else 'channels_last'
-  input_shape = tf.compat.v1.data.get_output_shapes(train_data)['image'][1:]
+  input_shape = tf.compat.v1.data.get_output_shapes(train_data)[0][1:]
   model_args = dict(
     num_classes=info.features['label'].num_classes, 
     input_shape=input_shape,
@@ -77,6 +77,8 @@ def main(_):
 
   steps_per_epoch = info.splits['train'].num_examples // FLAGS.batch_size + 1
   valid_steps = info.splits['test'].num_examples // FLAGS.batch_size + 1
+  
+  # NOTE: KERAS has to use tuple, when feeding tf.data.dataset
   model.fit(train_data, epochs=FLAGS.max_epochs, steps_per_epoch=steps_per_epoch)
             # validation_data=test_data, validation_steps=valid_steps) NOTE: THIS IS ERRORING :/
 

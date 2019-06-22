@@ -20,7 +20,7 @@ class VGG(tf.keras.Model):
     ])
 
   def call(self, inputs):
-    x = self.features(inputs['image'])
+    x = self.features(inputs)
     x = self.classifier(x)
     return x
 
