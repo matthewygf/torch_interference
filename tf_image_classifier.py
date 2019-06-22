@@ -31,7 +31,7 @@ def one_hot(data, num_classes):
   return (images, labels)
 
 def _transpose_data(data):
-  images, labels = data
+  images, labels = data[0], data[1]
   images = tf.transpose(images, perm=[0,3,2,1])
   return (images, labels)
 
