@@ -4,6 +4,7 @@ from absl import app
 from absl import flags
 from tf_image_models.densenet_tf import *
 from tf_image_models.vgg import *
+from tf_image_models.resnet import *
 
 FLAGS = flags.FLAGS
 
@@ -21,7 +22,9 @@ models_factory = {
   'densenet121': densenet121,
   # TODO: BROKEN :/
   'densenet40': densenet40,
-  'vgg19': vgg19
+  'vgg19': vgg19,
+  'resnet18': resnet18,
+  'resnet50': resnet50
 }
 
 # NOTE: KERAS has to use tuple dataset.

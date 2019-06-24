@@ -6,7 +6,8 @@ configs = {
 }
 
 class VGG(tf.keras.Model):
-  def __init__(self, name, config, batch_norm, num_classes=10, data_format='channels_first', input_shape=None):
+  def __init__(self, name, config, batch_norm, 
+               num_classes=10, data_format='channels_first', input_shape=None):
     super(VGG, self).__init__(name='vgg'+name)
     self.features = make_layers(configs[config], batch_norm=batch_norm, data_format=data_format)
     self.num_classes=num_classes
