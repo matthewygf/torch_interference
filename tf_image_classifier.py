@@ -5,6 +5,7 @@ from absl import flags
 from tf_image_models.densenet_tf import *
 from tf_image_models.vgg import *
 from tf_image_models.resnet import *
+import time
 
 FLAGS = flags.FLAGS
 
@@ -79,13 +80,14 @@ def main(_):
 
   steps_per_epoch = info.splits['train'].num_examples // FLAGS.batch_size + 1
   valid_steps = info.splits['test'].num_examples // FLAGS.batch_size + 1
-  
+  start_time = time.time()
   # NOTE: KERAS has to use tuple, when feeding tf.data.dataset
   model.fit(train_data, epochs=FLAGS.max_epochs, steps_per_epoch=steps_per_epoch,
             validation_data=test_data, validation_steps=valid_steps)
 
   print(model.summary())
-
+  final_time = time.time() - start_time
+  tf.compat.v1.logging.info("Finished: ran for %d secs", final_time)
   # Clear the session explicitly to avoid session delete error
   tf.keras.backend.clear_session()
 
