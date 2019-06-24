@@ -4,7 +4,6 @@ Direct translation from pytorch, as a comparison.
 import tensorflow as tf
 from tensorflow.keras import layers, Model
 
-#TODO: Resnet
 
 class Conv2D_Pad(layers.Layer):
   def __init__(self, planes, kernel_size, strides, data_format='channels_first', use_bias=False):
@@ -132,16 +131,20 @@ class Bottleneck(layers.Layer):
     out = self.relu(out)
 
     # group convs
-    outs = []
-    for i in range(self.groups):
-      # split output channels into groups
-      if self.data_format == 'channels_first':
-        g_out = layers.Lambda(lambda x: x[:, self.per_group_c*i:self.per_group_c*i+self.per_group_c, :, :])(out)
-      else:
-        g_out = layers.Lambda(lambda x: x[:, :, :, self.per_group_c*i:self.per_group_c*i+self.per_group_c])(out)
-      outs.append(self.group_convs[i](g_out))
+    if self.groups > 1 :
+      outs = []
+      for i in range(self.groups):
+        # split output channels into groups
+        if self.data_format == 'channels_first':
+          g_out = layers.Lambda(lambda x: x[:, self.per_group_c*i:self.per_group_c*i+self.per_group_c, :, :])(out)
+        else:
+          g_out = layers.Lambda(lambda x: x[:, :, :, self.per_group_c*i:self.per_group_c*i+self.per_group_c])(out)
+        outs.append(self.group_convs[i](g_out))
 
-    out = layers.Concatenate(name='grouped')(outs)
+      out = layers.Concatenate(name='grouped')(outs)
+    else:
+      out = self.group_convs[0](out)
+      
     out = self.bn2(out)
     out = self.relu(out)
 
@@ -246,7 +249,7 @@ def resnet18(**kwargs):
   return ResNet('18', BasicBlock, [2,2,2,2], **kwargs)
 
 def resnet50(**kwargs):
-  return ResNet('50', BasicBlock, [3,4,6,3], **kwargs)
+  return ResNet('50', Bottleneck, [3,4,6,3], **kwargs)
 
 
 
