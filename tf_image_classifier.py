@@ -5,6 +5,7 @@ from absl import flags
 from tf_image_models.densenet_tf import *
 from tf_image_models.vgg import *
 from tf_image_models.resnet import *
+from tf_image_models.debug_model import *
 import time
 
 FLAGS = flags.FLAGS
@@ -14,6 +15,7 @@ flags.DEFINE_string('dataset_dir', 'data', 'Dataset directory')
 flags.DEFINE_integer('batch_size', 64, 'Batch size of the model training')
 flags.DEFINE_integer('max_epochs', 5, 'maximum number of epochs to run')
 flags.DEFINE_string('model', None, 'The model you want to test')
+flags.DEFINE_boolean('profile_only', False, 'Only run profiling for flops')
 
 flags.mark_flag_as_required('dataset')
 flags.mark_flag_as_required('dataset_dir')
@@ -25,7 +27,8 @@ models_factory = {
   'densenet40': densenet40,
   'vgg19': vgg19,
   'resnet18': resnet18,
-  'resnet50': resnet50
+  'resnet50': resnet50,
+  'debug': debug_model
 }
 
 # NOTE: KERAS has to use tuple dataset.
@@ -78,17 +81,30 @@ def main(_):
                 loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
                 metrics=[tf.keras.metrics.CategoricalAccuracy()]) 
 
-  steps_per_epoch = info.splits['train'].num_examples // FLAGS.batch_size + 1
-  valid_steps = info.splits['test'].num_examples // FLAGS.batch_size + 1
-  start_time = time.time()
-  # NOTE: KERAS has to use tuple, when feeding tf.data.dataset
-  model.fit(train_data, epochs=FLAGS.max_epochs, steps_per_epoch=steps_per_epoch,
-            validation_data=test_data, validation_steps=valid_steps)
+  if FLAGS.profile_only:
+    im = tf.placeholder(tf.float32, [64,32,32,3])
+    x = model(im)
+    run_meta = tf.compat.v1.RunMetadata()
+    opts = tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()
+    flopst = tf.compat.v1.profiler.profile(
+      tf.compat.v1.get_default_graph(),
+      run_meta=run_meta,
+      cmd='scope',
+      options=opts
+    )
+  else:
+    steps_per_epoch = info.splits['train'].num_examples // FLAGS.batch_size + 1
+    valid_steps = info.splits['test'].num_examples // FLAGS.batch_size + 1
+    start_time = time.time()
+    # NOTE: KERAS has to use tuple, when feeding tf.data.dataset
+    
+    model.fit(train_data, epochs=FLAGS.max_epochs, steps_per_epoch=steps_per_epoch,
+              validation_data=test_data, validation_steps=valid_steps)
 
+    final_time = time.time() - start_time
+    tf.compat.v1.logging.info("Finished: ran for %d secs", final_time)
+    # Clear the session explicitly to avoid session delete error
   print(model.summary())
-  final_time = time.time() - start_time
-  tf.compat.v1.logging.info("Finished: ran for %d secs", final_time)
-  # Clear the session explicitly to avoid session delete error
   tf.keras.backend.clear_session()
 
 
