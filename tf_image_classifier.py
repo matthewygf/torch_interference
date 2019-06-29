@@ -26,6 +26,7 @@ models_factory = {
   # TODO: BROKEN :/
   'densenet40': densenet40,
   'vgg19': vgg19,
+  'vgg16': vgg16,
   'resnet18': resnet18,
   'resnet50': resnet50,
   'debug': debug_model
@@ -40,6 +41,14 @@ def one_hot(data, num_classes):
 def _transpose_data(images, labels):
   images = tf.transpose(images, perm=[0,3,2,1])
   return (images, labels)
+
+def load_pb(name_pb):
+  with tf.compat.v1.gfile.GFile(name_pb, 'rb') as f:
+    graph_def = tf.GraphDef()
+    graph_def.ParseFromString(f.read())
+  with tf.Graph().as_default() as g:
+    tf.import_graph_def(graph_def, name='')
+    return g
 
 def main(_):
   tf.keras.backend.clear_session()
@@ -82,16 +91,48 @@ def main(_):
                 metrics=[tf.keras.metrics.CategoricalAccuracy()]) 
 
   if FLAGS.profile_only:
-    im = tf.placeholder(tf.float32, [64,32,32,3])
+    # NOTE: MUST SET THIS
+    # 0 = TEST, 1 = TRAIN
+    tf.keras.backend.set_learning_phase(0)
+
+    # (1) create graph
+    shape = [FLAGS.batch_size,3,32,32] if gpu_available else [FLAGS.batch_size,224,224,3]
+    im = tf.placeholder(tf.float32, shape)
     x = model(im)
     run_meta = tf.compat.v1.RunMetadata()
-    opts = tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()
-    flopst = tf.compat.v1.profiler.profile(
-      tf.compat.v1.get_default_graph(),
+    g = tf.compat.v1.get_default_graph()
+    sess = tf.compat.v1.keras.backend.get_session()
+    opts = (tf.compat.v1.profiler.ProfileOptionBuilder(
+      tf.compat.v1.profiler.ProfileOptionBuilder.float_operation())
+      .with_node_names(hide_name_regexes=['.*add', '.*BiasAdd', '.*Pool'])
+      .build())
+    flops = tf.compat.v1.profiler.profile(
+      g,
       run_meta=run_meta,
       cmd='scope',
       options=opts
     )
+
+    tf.compat.v1.logging.info("FLOPs before freezing: %d" % flops.total_float_ops)
+
+    # (2) freeze graph
+    graph_def_inf = tf.compat.v1.graph_util.remove_training_nodes(g.as_graph_def())
+    graph_frozen = tf.compat.v1.graph_util.convert_variables_to_constants(
+      sess, graph_def_inf, [ out.op.name for out in model.outputs ])
+    with tf.compat.v1.gfile.GFile('frozen.pb', 'wb') as f:
+      f.write(graph_frozen.SerializeToString())
+
+    # (3) load frozen graph
+    g2 = load_pb('frozen.pb')
+    with g2.as_default():
+      flops_2 = tf.compat.v1.profiler.profile(
+        g2,
+        options=opts
+      )
+      tf.compat.v1.logging.info("FLOPs after freezing: %d" % flops_2.total_float_ops)
+    
+    tf.compat.v1.logging.info("FLOPs after freezing and divide by 2: %d" % (flops_2.total_float_ops // 2))
+
   else:
     steps_per_epoch = info.splits['train'].num_examples // FLAGS.batch_size + 1
     valid_steps = info.splits['test'].num_examples // FLAGS.batch_size + 1
@@ -104,7 +145,8 @@ def main(_):
     final_time = time.time() - start_time
     tf.compat.v1.logging.info("Finished: ran for %d secs", final_time)
     # Clear the session explicitly to avoid session delete error
-  print(model.summary())
+  if not FLAGS.profile_only:
+    print(model.summary())
   tf.keras.backend.clear_session()
 
 
