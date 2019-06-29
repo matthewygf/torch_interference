@@ -74,11 +74,11 @@ class Bottleneck(layers.Layer):
     self.groups = groups
     if groups == 1:
       self.per_group_c = width
-      self.group_convs.append(Conv2D_Pad(self.per_group_c, 3, stride, data_format=data_format, use_bias=False))
+      self.group_convs.append(Conv2D_Pad(self.per_group_c, 3, stride, data_format=data_format, use_bias=False, name='group_conv_only'))
     else:
       self.per_group_c = width // groups
       for i in range(groups):
-        self.group_convs.append(Conv2D_Pad(self.per_group_c, 3, stride, data_format=data_format))
+        self.group_convs.append(Conv2D_Pad(self.per_group_c, 3, stride, data_format=data_format, name='group_conv'+str(i)))
     
     self.bn2 = norm_layer(axis=self.bn_axis)
     self.conv3 = Conv2D_Pad(planes * self.expansion, 1, 1, use_bias=False, data_format=data_format)

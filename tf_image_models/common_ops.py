@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
 class Conv2D_Pad(layers.Layer):
-  def __init__(self, planes, kernel_size, strides, data_format='channels_first', use_bias=False):
+  def __init__(self, planes, kernel_size, strides, data_format='channels_first', use_bias=False, name=None):
     super(Conv2D_Pad, self).__init__()
     self.data_format = data_format
     self.use_bias = use_bias
@@ -11,7 +11,8 @@ class Conv2D_Pad(layers.Layer):
     self.conv2d = layers.Conv2D(planes, kernel_size, strides=strides, 
                                 padding=('same' if strides==1 else 'valid'), use_bias=use_bias,
                                 kernel_initializer=tf.compat.v1.keras.initializers.he_normal(),
-                                data_format=self.data_format)
+                                data_format=self.data_format,
+                                name=name)
   
   def call(self, inputs):
     x = inputs
