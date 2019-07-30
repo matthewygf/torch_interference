@@ -2,6 +2,7 @@ import tensorflow as tf
 # pytorch vision direct translate.
 
 configs = {
+  '16': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
   '19': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M']
 }
 
@@ -49,3 +50,6 @@ def make_layers(config, batch_norm=False, input_channels=3, data_format='channel
 
 def vgg19(**kwargs):
   return VGG('19', '19', False, **kwargs)
+
+def vgg16(**kwargs):
+  return VGG('16', '16', False, **kwargs)

@@ -106,20 +106,20 @@ class Bottleneck(layers.Layer):
 
     width = int(planes * (base_width / 64.)) * groups
     # both self.conv1 and self.downsample layers downsample the input when stride != 1
-    self.conv1 = Conv2D_Pad(width, 1, stride, use_bias=False, data_format=data_format, )
+    self.conv1 = Conv2D_Pad(width, 1, 1, use_bias=False, data_format=data_format, )
     self.bn1 = norm_layer(axis=self.bn_axis)
     self.group_convs = []
     self.groups = groups
     if groups == 1:
       self.per_group_c = width
-      self.group_convs.append(Conv2D_Pad(self.per_group_c, 3, stride, data_format=data_format, use_bias=False))
+      self.group_convs.append(Conv2D_Pad(self.per_group_c, 3, stride, data_format=data_format, use_bias=False, name='group_conv_only'))
     else:
       self.per_group_c = width // groups
       for i in range(groups):
         self.group_convs.append(Conv2D_Pad(self.per_group_c, 3, data_format=data_format))
 
     self.bn2 = norm_layer(axis=self.bn_axis)
-    self.conv3 = Conv2D_Pad(planes * self.expansion, 1, stride, use_bias=False, data_format=data_format, )
+    self.conv3 = Conv2D_Pad(planes * self.expansion, 1, 1, use_bias=False, data_format=data_format)
     self.bn3 = norm_layer(axis=self.bn_axis)
     self.relu = layers.ReLU()
 
@@ -183,7 +183,7 @@ class ResNet(Model):
     self.groups = groups
     self.base_width = width_per_group
     self.padd1 = layers.ZeroPadding2D(padding=((3,3), (3,3)), data_format=data_format, input_shape=input_shape)
-    self.conv1 = layers.Conv2D(self.inplanes, 7, strides=2, use_bias=False, data_format=data_format)
+    self.conv1 = Conv2D_Pad(self.inplanes, 7, strides=2, use_bias=False, data_format=data_format)
     if isinstance(self._norm_layer, layers.BatchNormalization):
       self.n1 = self._norm_layer(axis=self.bn_axis)
     else:

@@ -28,6 +28,7 @@ models_factory = {
   # TODO: BROKEN :/
   'densenet40': densenet40,
   'vgg19': vgg19,
+  'vgg16': vgg16,
   'resnet18': resnet18,
   'resnet50': resnet50,
 }
