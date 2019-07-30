@@ -12,39 +12,51 @@ import copy
 import models_to_run
 
 # NOTE: CNNs
-_default_batch_size = 512
-alex_cmd = ['python', 'image_classifier.py', '--model', 'alexnet', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-squeezenetv1_0_cmd = ['python', 'image_classifier.py', '--model', 'squeezenet1_0', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-inceptionv3_cmd = ['python', 'image_classifier.py', '--model', 'inception_v3', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True', '--max_epochs', '7','--batch_size', str(_default_batch_size)]
-mobilenetv2_large_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet_large', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-vgg11_cmd = ['python', 'image_classifier.py', '--model', 'vgg11', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size',str(_default_batch_size)]
-vgg11bn_cmd = ['python', 'image_classifier.py', '--model', 'vgg11_bn', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size',str(_default_batch_size)]
-vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size',str(_default_batch_size)]
-resnet18_cmd = ['python', 'image_classifier.py', '--model', 'resnet18', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-resnext29_2x64_cmd = ['python', 'image_classifier.py', '--model', 'resnext29_2x64d', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-resnext11_2x16_cmd = ['python', 'image_classifier.py', '--model', 'resnext11_2x16d', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-resnext11_2x64_cmd = ['python', 'image_classifier.py', '--model', 'resnext11_2x64d', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-resnet34_cmd = ['python', 'image_classifier.py', '--model', 'resnet34', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-resnet50_cmd = ['python', 'image_classifier.py', '--model', 'resnet50', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-shufflenet_2_0_cmd = ['python', 'image_classifier.py', '--model', 'shufflenetv2_2_0', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-shufflenet_1_0_cmd = ['python', 'image_classifier.py', '--model', 'shufflenetv2_1_0', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-shufflenet_0_5_cmd = ['python', 'image_classifier.py', '--model', 'shufflenetv2_0_5', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-dense121_cmd = ['python', 'image_classifier.py', '--model', 'densenet121', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-dense161_cmd = ['python', 'image_classifier.py', '--model', 'densenet161', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-dense169_cmd = ['python', 'image_classifier.py', '--model', 'densenet169', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-eff_b0_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb0', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-eff_b1_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb1', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-eff_b2_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb2', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-eff_b3_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb3', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-eff_b4_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb4', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
-pnasb_cmd = ['python', 'image_classifier.py', '--model', 'pnasb', '--use_cuda', 'True', '--max_epochs', '7', '--batch_size', str(_default_batch_size)]
+_default_batch_size = [64]
+alex_cmd = ['python', 'image_classifier.py', '--model', 'alexnet', '--use_cuda', 'True', '--max_epochs', '5']
+squeezenetv1_0_cmd = ['python', 'image_classifier.py', '--model', 'squeezenet1_0', '--use_cuda', 'True', '--max_epochs', '5' ]
+googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use_cuda', 'True', '--max_epochs', '5' ]
+inceptionv3_cmd = ['python', 'image_classifier.py', '--model', 'inception_v3', '--use_cuda', 'True', '--max_epochs', '5' ]
+mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True', '--max_epochs', '5', ]
+mobilenetv2_large_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet_large', '--use_cuda', 'True', '--max_epochs', '5' ]
+vgg11_cmd = ['python', 'image_classifier.py', '--model', 'vgg11', '--use_cuda', 'True', '--max_epochs', '5', '--batch_size',str(_default_batch_size)]
+vgg11bn_cmd = ['python', 'image_classifier.py', '--model', 'vgg11_bn', '--use_cuda', 'True', '--max_epochs', '5', '--batch_size',str(_default_batch_size)]
+vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '5', '--batch_size',str(_default_batch_size)]
+resnet18_cmd = ['python', 'image_classifier.py', '--model', 'resnet18', '--use_cuda', 'True', '--max_epochs', '5' ]
+resnext29_2x64_cmd = ['python', 'image_classifier.py', '--model', 'resnext29_2x64d', '--use_cuda', 'True', '--max_epochs', '5' ]
+resnext11_2x16_cmd = ['python', 'image_classifier.py', '--model', 'resnext11_2x16d', '--use_cuda', 'True', '--max_epochs', '5' ]
+resnext11_2x64_cmd = ['python', 'image_classifier.py', '--model', 'resnext11_2x64d', '--use_cuda', 'True', '--max_epochs', '5' ]
+resnet34_cmd = ['python', 'image_classifier.py', '--model', 'resnet34', '--use_cuda', 'True', '--max_epochs', '5' ]
+resnet50_cmd = ['python', 'image_classifier.py', '--model', 'resnet50', '--use_cuda', 'True', '--max_epochs', '5' ]
+shufflenet_2_0_cmd = ['python', 'image_classifier.py', '--model', 'shufflenetv2_2_0', '--use_cuda', 'True', '--max_epochs', '5' ]
+shufflenet_1_0_cmd = ['python', 'image_classifier.py', '--model', 'shufflenetv2_1_0', '--use_cuda', 'True', '--max_epochs', '5' ]
+shufflenet_0_5_cmd = ['python', 'image_classifier.py', '--model', 'shufflenetv2_0_5', '--use_cuda', 'True', '--max_epochs', '5' ]
+dense121_cmd = ['python', 'image_classifier.py', '--model', 'densenet121', '--use_cuda', 'True', '--max_epochs', '5' ]
+dense161_cmd = ['python', 'image_classifier.py', '--model', 'densenet161', '--use_cuda', 'True', '--max_epochs', '5' ]
+dense169_cmd = ['python', 'image_classifier.py', '--model', 'densenet169', '--use_cuda', 'True', '--max_epochs', '5' ]
+eff_b0_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb0', '--use_cuda', 'True', '--max_epochs', '5' ]
+eff_b1_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb1', '--use_cuda', 'True', '--max_epochs', '5' ]
+eff_b2_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb2', '--use_cuda', 'True', '--max_epochs', '5' ]
+eff_b3_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb3', '--use_cuda', 'True', '--max_epochs', '5' ]
+eff_b4_cmd = ['python', 'image_classifier.py', '--model', 'efficientnetb4', '--use_cuda', 'True', '--max_epochs', '5' ]
+pnasb_cmd = ['python', 'image_classifier.py', '--model', 'pnasb', '--use_cuda', 'True', '--max_epochs', '5' ]
+mnasnet0_5_cmd = ['python', 'image_classifier.py', '--model', 'mnasnet0_5', '--use_cuda', 'True', '--max_epochs', '5' ]
+mnasnet1_0_cmd = ['python', 'image_classifier.py', '--model', 'mnasnet1_0', '--use_cuda', 'True', '--max_epochs', '5' ]
+mnasnet1_3_cmd = ['python', 'image_classifier.py', '--model', 'mnasnet1_3', '--use_cuda', 'True', '--max_epochs', '5' ]
+dpn92_cmd = ['python', 'image_classifier.py', '--model', 'dpn92', '--use_cuda', 'True', '--max_epochs', '5' ]
+dpn26_cmd = ['python', 'image_classifier.py', '--model', 'dpn26', '--use_cuda', 'True', '--max_epochs', '5' ]
+dpn26small_cmd = ['python', 'image_classifier.py', '--model', 'dpn26_small', '--use_cuda', 'True', '--max_epochs', '5' ]
+pyramidnet_48_110_cmd = ['python', 'image_classifier.py', '--model', 'pyramidnet_48_110', '--use_cuda', 'True', '--max_epochs', '5' ]
+pyramidnet_84_110_cmd = ['python', 'image_classifier.py', '--model', 'pyramidnet_84_110', '--use_cuda', 'True', '--max_epochs', '5' ]
+pyramidnet_84_66_cmd = ['python', 'image_classifier.py', '--model', 'pyramidnet_84_66', '--use_cuda', 'True', '--max_epochs', '5' ]
+pyramidnet_270_110_bottleneck_cmd = ['python', 'image_classifier.py', '--model', 'pyramidnet_270_110_bottleneck', '--use_cuda', 'True', '--max_epochs', '5' ]
+resnet_wide_18_2_bottleneck_cmd = ['python', 'image_classifier.py', '--model', 'resnet_wide_18_2', '--use_cuda', 'True', '--max_epochs', '5' ]
+
 # NOTE: NLPs
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '6', '--task', 'pos', '--use_cuda', 'True']
 # NOTE: these mt tasks aren't very good , feel free to tune, most likely because of "number of vocabs".
 mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '10000', '--batch_size', '16' ,'--use_cuda', 'True']
-mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '64', '--hiddens_dim', '128',  '--task', 'mt', '--max_vocabs', '10000','--batch_size', '16', '--use_cuda', 'True']
+mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '64', '--hiddens_dim', '128' '--task', 'mt', '--max_vocabs', '10000','--batch_size', '16', '--use_cuda', 'True']
 # NOTE: language model need some tuning too.
 lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '64', '--max_len', '30', '--hiddens_dim', '64', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3']
 lm_med_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '1']
@@ -56,6 +68,17 @@ pmon_mod_cmd = ['pmon', '--csv=true', '--interval=250']
 pcie_mod_cmd = ['pcie', '--csv=true', '--interval=250']
 
 models_train = {
+    'mnasnet0_5_cmd': mnasnet0_5_cmd,
+    'mnasnet1_0_cmd': mnasnet1_0_cmd,
+    'mnasnet1_3_cmd': mnasnet1_3_cmd,
+    'dpn92_cmd': dpn92_cmd,
+    'dpn26_cmd': dpn26_cmd,
+    'dpn26small_cmd': dpn26small_cmd,
+    'pyramidnet_48_110_cmd': pyramidnet_48_110_cmd,
+    'pyramidnet_84_110_cmd': pyramidnet_84_110_cmd,
+    'pyramidnet_84_66_cmd': pyramidnet_84_66_cmd,
+    'pyramidnet_270_110_bottleneck_cmd': pyramidnet_270_110_bottleneck_cmd,
+    'resnet_wide_18_2_bottleneck_cmd': resnet_wide_18_2_bottleneck_cmd,
     'alexnet_cmd': alex_cmd,
     'googlenet_cmd': googlenet_cmd,
     'squeezenetv1_0_cmd': squeezenetv1_0_cmd,
@@ -113,7 +136,7 @@ def get_average_num_step(file_path):
                 mean = (mean + float(time_elapsed)) / num
     return (num, mean)
 
-def create_process(model_name, index, experiment_path, percent=0.0, is_nvprof=False, nvprof_args=None):
+def create_process(batch_size, model_name, index, experiment_path, percent=0.0, is_nvprof=False, nvprof_args=None):
     execution_id = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')
     output_dir_name = execution_id+model_name+str(index)
     if is_nvprof:
@@ -135,8 +158,11 @@ def create_process(model_name, index, experiment_path, percent=0.0, is_nvprof=Fa
     curr_dir = os.path.abspath(os.path.dirname(__file__))
     cmd = cmd + ['--dataset_dir', curr_dir]
     cmd = cmd + ['--run_name', output_dir_name]
-    
-    if is_nvprof:
+    cmd = cmd + ['--batch_size', str(batch_size)]
+    if _PROF_ONLY:
+        cmd = cmd + ['--profile_only']
+
+    if is_nvprof and not _PROF_ONLY:
         nvprof_log = os.path.join(train_dir, str(index)+model_name+'nvprof_log.log')
         nv_prefix = copy.deepcopy(models_train['nvprof_prefix'])
         nv_prefix += ['--log-file', nvprof_log]
@@ -177,11 +203,13 @@ def kill_process_safe(pid,
     err_file_paths.pop(i)
     return mean, num
     
-_RUNS_PER_SET = 2
+_RUNS_PER_SET = 1
 _START = 1
 _RUN_NVPROF = False
+_PROF_ONLY = True
 
 def run(
+    batch_size,
     average_log, experiment_path, 
     experiment_set, total_length, 
     experiment_index,
@@ -209,10 +237,11 @@ def run(
           err.close()
     
     for experiment_run in range(_START, _RUNS_PER_SET+_START):
-        if os.path.exists(average_log):
-            average_file = open(average_log, mode='a+')
-        else:
-            average_file = open(average_log, mode='w+')
+        if not _PROF_ONLY:
+            if os.path.exists(average_log):
+                average_file = open(average_log, mode='a+')
+            else:
+                average_file = open(average_log, mode='w+')
         processes_list = []
         err_logs = []
         out_logs = []
@@ -222,7 +251,7 @@ def run(
         percent = (1 / len(experiment_set)) - 0.075 # some overhead of cuda stuff i think :/
         for i, m in enumerate(experiment_set):
             start_time = time.time()
-            p, out, err, path, out_dir = create_process(m, i, experiment_path, percent)
+            p, out, err, path, out_dir = create_process(batch_size, m, i, experiment_path, percent)
             processes_list.append(p)
             err_logs.append(err)
             out_logs.append(out)
@@ -230,35 +259,37 @@ def run(
             out_file_paths.append(path)
             ids[p.pid] = i
         should_stop = False
-        sys_tracker = sys_track.InfosTracker(experiment_path)
+        if not _PROF_ONLY:
+            sys_tracker = sys_track.InfosTracker(experiment_path)
 
         try:
-            pmon_log_path = os.path.join(experiment_path, str(experiment_run)+'pmon.log')
-            pmon_log = open(pmon_log_path, 'a+')
-            pmon_csv = os.path.join(experiment_path, str(experiment_run)+'pmon.csv')
-            pmon_cmd = copy.deepcopy(models_train['pmon_mod_cmd'])
-            pmon_cmd += ['--logpath='+pmon_csv]
-            pmon_p = subprocess.Popen(pmon_cmd, stdout=pmon_log, stderr=pmon_log)
-            pmon_poll = None
+            if not _PROF_ONLY:
+                pmon_log_path = os.path.join(experiment_path, str(experiment_run)+'pmon.log')
+                pmon_log = open(pmon_log_path, 'a+')
+                pmon_csv = os.path.join(experiment_path, str(experiment_run)+'pmon.csv')
+                pmon_cmd = copy.deepcopy(models_train['pmon_mod_cmd'])
+                pmon_cmd += ['--logpath='+pmon_csv]
+                pmon_p = subprocess.Popen(pmon_cmd, stdout=pmon_log, stderr=pmon_log)
+                pmon_poll = None
 
-            pcie_log_path = os.path.join(experiment_path, str(experiment_run)+'pcie.log')
-            pcie_log = open(pcie_log_path, 'a+')
-            pcie_csv = os.path.join(experiment_path, str(experiment_run)+'pcie.csv')
-            pcie_cmd = copy.deepcopy(models_train['pcie_mod_cmd'])
-            pcie_cmd += [ '--logpath='+pcie_csv ]
-            pcie_p = subprocess.Popen(pcie_cmd, stdout=pcie_log, stderr=pcie_log)
-            pcie_poll = None
+                pcie_log_path = os.path.join(experiment_path, str(experiment_run)+'pcie.log')
+                pcie_log = open(pcie_log_path, 'a+')
+                pcie_csv = os.path.join(experiment_path, str(experiment_run)+'pcie.csv')
+                pcie_cmd = copy.deepcopy(models_train['pcie_mod_cmd'])
+                pcie_cmd += [ '--logpath='+pcie_csv ]
+                pcie_p = subprocess.Popen(pcie_cmd, stdout=pcie_log, stderr=pcie_log)
+                pcie_poll = None
 
-            smi_file_path = os.path.join(experiment_path, str(experiment_run)+'smi_out.log') 
-            smi_file = open(smi_file_path, 'a+')
-            nvidia_csv = "smi_watch.csv"
-            nvidia_csv = str(experiment_run)+nvidia_csv
-            nvidia_smi_cmd = ['watch', '-n', '0.2', 'nvidia-smi', 
-                              '--query-gpu=memory.used,memory.total,utilization.gpu,utilization.memory,power.draw', 
-                              '--format=noheader,csv', '|', 'tee', '-a' , experiment_path+'/'+nvidia_csv]
-            smi_p = subprocess.Popen(nvidia_smi_cmd, stdout=smi_file, stderr=smi_file)
-            smi_poll = None
-            sys_tracker.start()
+                smi_file_path = os.path.join(experiment_path, str(experiment_run)+'smi_out.log') 
+                smi_file = open(smi_file_path, 'a+')
+                nvidia_csv = "smi_watch.csv"
+                nvidia_csv = str(experiment_run)+nvidia_csv
+                nvidia_smi_cmd = ['watch', '-n', '0.2', 'nvidia-smi', 
+                                '--query-gpu=memory.used,memory.total,utilization.gpu,utilization.memory,power.draw', 
+                                '--format=noheader,csv', '|', 'tee', '-a' , experiment_path+'/'+nvidia_csv]
+                smi_p = subprocess.Popen(nvidia_smi_cmd, stdout=smi_file, stderr=smi_file)
+                smi_poll = None
+                sys_tracker.start()
             while not should_stop:
                 time.sleep(5)
                 if len(processes_list) <= 0:
@@ -274,53 +305,60 @@ def run(
                         print('Process %d still running' % pid)
                     else:
                         mean, num = kill_process_safe(pid, err, out, path, ids, accumulated_models, 
-                                                      mean_num_models, mean_time_p_steps, processes_list, err_logs, out_logs, start_times, out_file_paths, i)
-                        line = ("experiment set %d, experiment_run %d: %d process average num p step is %.4f and total number of step is: %d \n" % 
-                                (experiment_index, experiment_run, pid, mean, num))
-                        average_file.write(line)
+                                                    mean_num_models, mean_time_p_steps, processes_list, err_logs, out_logs, start_times, out_file_paths, i)
+                        if not _PROF_ONLY:
+                            line = ("experiment set %d, experiment_run %d: %d process average num p step is %.4f and total number of step is: %d \n" % 
+                                    (experiment_index, experiment_run, pid, mean, num))
+                            average_file.write(line)
 
-                smi_poll = smi_p.poll()
-                if smi_poll is None:
-                    print('NVIDIA_SMI Process %d still running' % smi_p.pid)
-                
-                pmon_poll = pmon_p.poll()
-                if pmon_poll is None:
-                    print('PMON Process %d still running' % pmon_p.pid)
+                if not _PROF_ONLY:
+                    smi_poll = smi_p.poll()
+                    if smi_poll is None:
+                        print('NVIDIA_SMI Process %d still running' % smi_p.pid)
+                    
+                    pmon_poll = pmon_p.poll()
+                    if pmon_poll is None:
+                        print('PMON Process %d still running' % pmon_p.pid)
 
-                pcie_poll = pcie_p.poll()
-                if pcie_poll is None:
-                    print('PCIe mon Process %d still running' % pcie_p.pid)
+                    pcie_poll = pcie_p.poll()
+                    if pcie_poll is None:
+                        print('PCIe mon Process %d still running' % pcie_p.pid)
 
             print('total experiments: %d, experiment_run %d , finished %d' % (total_length-1, experiment_run, experiment_index))
 
         except KeyboardInterrupt:
-            smi_p.kill()
-            smi_file.close()
-            for p, err, out in zip(processes_list, err_logs, out_logs):
-                pid = p.pid
-                p.kill()
-                err.close()
-                out.close()
-                print('%d killed ! ! !' % pid)
-        finally:
-             smi_poll = smi_p.poll()
-             pmon_p.kill()
-             pmon_log.close()
-             pcie_p.kill()
-             pcie_log.close()
-             if smi_poll is None:
+            if not _PROF_ONLY:
                 smi_p.kill()
                 smi_file.close()
-        
+                for p, err, out in zip(processes_list, err_logs, out_logs):
+                    pid = p.pid
+                    p.kill()
+                    err.close()
+                    out.close()
+                    print('%d killed ! ! !' % pid)
+            else:
+                print("done")
+        finally:
+            print("final")
+            if not _PROF_ONLY:
+                smi_poll = smi_p.poll()
+                pmon_p.kill()
+                pmon_log.close()
+                pcie_p.kill()
+                pcie_log.close()
+                if smi_poll is None:
+                    smi_p.kill()
+                    smi_file.close()
+        if not _PROF_ONLY:
+            average_file.close()
+            sys_tracker.stop()
+    if not _PROF_ONLY:
+        # Experiment average size.
+        average_file = open(average_log, mode='a+')
+        for i in range(len(experiment_set)):
+            average_file.write("TOTAL: In experiment %d average mean sec/step and average number for model %d are %.4f , %d \n" % 
+                            (experiment_index, i, mean_time_p_steps[i], mean_num_models[i]))
         average_file.close()
-        sys_tracker.stop()
-
-    # Experiment average size.
-    average_file = open(average_log, mode='a+')
-    for i in range(len(experiment_set)):
-        average_file.write("TOTAL: In experiment %d average mean sec/step and average number for model %d are %.4f , %d \n" % 
-                        (experiment_index, i, mean_time_p_steps[i], mean_num_models[i]))
-    average_file.close()
     
 def main():
     # which one we should run in parallel
@@ -332,26 +370,28 @@ def main():
     else:
       curr_dir = os.path.dirname(__file__)
     project_dir = os.path.abspath(os.path.dirname(curr_dir))
-    experiment_path = os.path.join(project_dir, 'experiment')
+    for b in _default_batch_size:
+        experiment_path = os.path.join(project_dir, 'experiment')
+        experiment_path = experiment_path+str(b)
+        for experiment_index, ex in enumerate(sets):
+            current_experiment_path = os.path.join(experiment_path, str(experiment_index))
+            experiment_file = os.path.join(experiment_path, 'experiment.log')
 
-    for experiment_index, ex in enumerate(sets):
-        current_experiment_path = os.path.join(experiment_path, str(experiment_index))
-        experiment_file = os.path.join(experiment_path, 'experiment.log')
+            if _RUN_NVPROF:
+                # TODO: transition and test with nsight
+                # NOTE: timeline please use nsight-system gui to do so. much better.
+                current_experiment_path = os.path.join(current_experiment_path, "timeline_metrics")
+                profiled_log = os.path.join(current_experiment_path, 'experiment.log')
+                run(b, profiled_log, current_experiment_path, ex, len(sets), experiment_index, _RUN_NVPROF)
+            else:
+                run(b, experiment_file, current_experiment_path, ex, len(sets), experiment_index)
 
-        if _RUN_NVPROF:
-          # TODO: transition and test with nsight
-          # NOTE: timeline please use nsight-system gui to do so. much better.
-          current_experiment_path = os.path.join(current_experiment_path, "timeline_metrics")
-          profiled_log = os.path.join(current_experiment_path, 'experiment.log')
-          run(profiled_log, current_experiment_path, ex, len(sets), experiment_index, _RUN_NVPROF)
-        else:
-          run(experiment_file, current_experiment_path, ex, len(sets), experiment_index)
-
-    app_csv_p = subprocess.Popen(['python', 'multiprocess_appfinishtime.py'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    while app_csv_p.poll() is None:
-      time.sleep(2)
-      print("waiting for app time csv finish")
-    print("Done.")
+        if not _PROF_ONLY:
+            app_csv_p = subprocess.Popen(['python', 'multiprocess_appfinishtime.py'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            while app_csv_p.poll() is None:
+                time.sleep(2)
+                print("waiting for app time csv finish")
+            print("Done.")
 if __name__ == "__main__":
     main()
         

@@ -4,3 +4,15 @@ data
 __pycache__
 *.tsv
 preprocess*
+*.gz
+*.log
+*.csv
+*.pb
+*.pth
+nc_zhen/
+nc_zhen/**
+ud-eng/
+ud-eng/**
+wikitext/
+wikitext/**
+downloads
