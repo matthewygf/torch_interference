@@ -13,4 +13,14 @@ RUN DEBIAN_FRONTEND=noninteractive && \
 
 WORKDIR /root
 
-RUN pip install https://download.pytorch.org/whl/cu100/torchvision-0.3.0-cp36-cp36m-linux_x86_64.whl
+RUN pip install absl-py
+
+RUN pip uninstall -y torchvision
+
+RUN git clone https://github.com/pytorch/vision.git
+
+WORKDIR /root/vision
+
+RUN python setup.py install
+
+WORKDIR /root
