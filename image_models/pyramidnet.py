@@ -49,7 +49,11 @@ class BasicBlock(nn.Module):
         shortcut_channel = shortcut.size()[1]
 
         if residual_channel != shortcut_channel:
-            padding = torch.zeros((batch_size, residual_channel - shortcut_channel, featuremap_size[0], featuremap_size[1]), requires_grad=True, dtype=torch.float32)
+            padding = torch.zeros(
+                (batch_size, 
+                residual_channel - shortcut_channel, 
+                featuremap_size[0], featuremap_size[1]), 
+                requires_grad=True, dtype=torch.float32).to(x.device)
             out += torch.cat((shortcut, padding), 1)
         else:
             out += shortcut 
@@ -101,7 +105,11 @@ class Bottleneck(nn.Module):
         shortcut_channel = shortcut.size()[1]
 
         if residual_channel != shortcut_channel:
-            padding = torch.zeros((batch_size, residual_channel - shortcut_channel, featuremap_size[0], featuremap_size[1]), dtype=torch.float32, requires_grad=True) 
+            padding = torch.zeros(
+                (batch_size, 
+                residual_channel - shortcut_channel, 
+                featuremap_size[0], featuremap_size[1]), 
+                dtype=torch.float32, requires_grad=True).to(x.device)
             out += torch.cat((shortcut, padding), 1)
         else:
             out += shortcut 
