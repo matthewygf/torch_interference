@@ -236,7 +236,8 @@ def main(argv):
 
   if FLAGS.profile_only:
     stats = counter.profile(model, input_size=(FLAGS.batch_size,) + (datasets_shape[FLAGS.dataset]), logger=logger)
-    logger.info(stats)
+    logger.info("DNN_Features: %s", str(stats))
+    print("DNN_Features: ", str(stats))
   else:
     compose_trans = transforms.Compose([
       transforms.ToTensor()
