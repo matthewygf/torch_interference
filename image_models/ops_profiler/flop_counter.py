@@ -94,7 +94,7 @@ def profile(model, input_size, custom_ops={}, device="cpu", logger=None, is_cnn=
         # NOTE: DOES NOT COUNT SKIP_CONNECT
         # NOTE: DOES NOT COUNT ATTENTION
         name = str(name_mod[1].__class__.__name__).lower()
-        print(idx ,'-->', name_mod[0])
+        # print(idx ,'-->', name_mod[0])
         if 'conv' in name:
             total_convs += 1
         elif 'linear' in name:
