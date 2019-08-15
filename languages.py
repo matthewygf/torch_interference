@@ -11,6 +11,7 @@ from allennlp.common.file_utils import cached_path
 # TODO: I am not sure how to use this PennTreeBank yet :/
 from allennlp.data.dataset_readers import PennTreeBankConstituencySpanDatasetReader, UniversalDependenciesDatasetReader, Seq2SeqDatasetReader, LanguageModelingReader
 from languages_data.wikitext_dataset_reader import WikiTextDatasetReader
+from languages_data.max_len_seq2seq_reader import MaxLengthSeq2SeqReader
 from allennlp.data.vocabulary import Vocabulary
 
 from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
@@ -58,7 +59,7 @@ flags.DEFINE_float('drop_out', 0., 'dropout rate, if it is RNN base: for outputs
 flags.DEFINE_boolean('bidirectional', False, 'if it is RNNbase, whether it becomes bidirectional RNN')
 flags.DEFINE_integer('max_len', 40, 'maximum length to generate tokens')
 flags.DEFINE_integer('num_layers', 1, 'number of layers of recurrent models')
-flags.DEFINE_integer('max_length_sentence', 200, 'maxium length per sentence for the encoder')
+flags.DEFINE_integer('max_sentence_length', 200, 'maxium length per sentence for the encoder')
 flags.DEFINE_bool('profile_only', False, 'Profile the model and exit.')
 
 #TODO: DATA PARALLEL / MODEL PARALLEL
@@ -73,7 +74,7 @@ data_reader_factory = {
   'debug': pos_data_reader.TaskDataReader,
   'ptb_tree': PennTreeBankConstituencySpanDatasetReader,
   'ud-eng': UniversalDependenciesDatasetReader,
-  'nc_zhen': Seq2SeqDatasetReader,
+  'nc_zhen': MaxLengthSeq2SeqReader,
   'wikitext': WikiTextDatasetReader
 }
 
@@ -101,7 +102,8 @@ def main(argv):
 
   cfgs = datareader_cfg_factory.get_datareader_configs(FLAGS.dataset)
   if cfgs is not None:
-    cfgs.update({'max_length_sentence': FLAGS.max_length_sentence})
+    if FLAGS.max_sentence_length > 0:
+      cfgs.update({'max_sentence_length': FLAGS.max_sentence_length})
     reader = data_reader_factory[FLAGS.dataset](**cfgs)
   else:
     reader = data_reader_factory[FLAGS.dataset]()
@@ -145,7 +147,7 @@ def main(argv):
   out_feature_key, model = models_factory.get_model_fn(**models_args)
   if FLAGS.profile_only:
     # language
-    torch.save(model, FLAGS.run_name+"model.pth")
+    torch.save(model.state_dict(), FLAGS.run_name+"model.pth")
     return
 
   model = model.to(device)
@@ -164,7 +166,7 @@ def main(argv):
                     num_epochs=FLAGS.max_epochs,
                     log_batch_size_period = 10,
                     cuda_device=cuda_device)
-
+                    
   start_time = time.time()
   try:
     status = None

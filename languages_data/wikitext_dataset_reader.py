@@ -25,9 +25,9 @@ class WikiTextDatasetReader(LanguageModelingReader):
                tokenizer: Tokenizer = None, 
                token_indexers: Dict[str, TokenIndexer] = None, 
                lazy: bool = False, 
-               max_length_sentence: int = None):
+               max_sentence_length: int = None):
 
-    self.max_length_sentence = max_length_sentence
+    self.max_sentence_length = max_sentence_length
     super().__init__(tokens_per_instance=tokens_per_instance, tokenizer=tokenizer, token_indexers=token_indexers, lazy=lazy)
 
   @overrides
@@ -52,7 +52,7 @@ class WikiTextDatasetReader(LanguageModelingReader):
       for tokenized_string in tokenized_strings:
           if len(tokenized_string) <= 6: continue # skip short sentence
           tokenized_string = list(tokenized_string)
-          length = min(len(tokenized_string), self.max_length_sentence)
+          length = min(len(tokenized_string), self.max_sentence_length)
           tokenized_string = tokenized_string[:length-1]
           tokenized_string.insert(0, Token(START_SYMBOL))
           tokenized_string.append(Token(END_SYMBOL))
