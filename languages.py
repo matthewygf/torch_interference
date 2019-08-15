@@ -145,7 +145,7 @@ def main(argv):
   out_feature_key, model = models_factory.get_model_fn(**models_args)
   if FLAGS.profile_only:
     # language
-    torch.save(model, "model.pth")
+    torch.save(model, FLAGS.run_name+"model.pth")
     return
 
   model = model.to(device)
