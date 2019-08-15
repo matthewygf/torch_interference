@@ -58,7 +58,7 @@ flags.DEFINE_float('drop_out', 0., 'dropout rate, if it is RNN base: for outputs
 flags.DEFINE_boolean('bidirectional', False, 'if it is RNNbase, whether it becomes bidirectional RNN')
 flags.DEFINE_integer('max_len', 40, 'maximum length to generate tokens')
 flags.DEFINE_integer('num_layers', 1, 'number of layers of recurrent models')
-flags.DEFINE_interger('max_length_sentence', 200, 'maxium length per sentence for the encoder')
+flags.DEFINE_integer('max_length_sentence', 200, 'maxium length per sentence for the encoder')
 flags.DEFINE_bool('profile_only', False, 'Profile the model and exit.')
 
 #TODO: DATA PARALLEL / MODEL PARALLEL
