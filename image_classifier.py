@@ -16,7 +16,11 @@ import ctypes
 import csv
 import datetime
 import utils as U
-import image_models.ops_profiler.flop_counter as counter
+import ops_profiler.flop_counter as counter
+import ops_profiler.flop_counter_v2 as counter_v2
+
+import signal
+import sys
 
 torch.manual_seed(0)
 torch.backends.cudnn.deterministic = True
@@ -38,6 +42,7 @@ flags.DEFINE_boolean('use_cuda', False, 'whether to use GPU')
 flags.DEFINE_integer('log_interval', 10, 'Batch intervals to log')
 flags.DEFINE_integer('max_epochs', 5, 'maximum number of epochs to run')
 flags.DEFINE_bool('profile_only', False, 'profile model FLOPs and Params only, not running the training procedure')
+flags.DEFINE_bool('profile_usev2', False, 'profile model FLOPs and Params using another ver., not running the training procedure')
 
 flags.mark_flag_as_required('run_name')
 flags.mark_flag_as_required('model')
@@ -149,7 +154,10 @@ def main(argv):
   model = model.to(device)
 
   if FLAGS.profile_only:
-    print(counter.profile(model, input_size=(FLAGS.batch_size,) + datasets_shape[FLAGS.dataset], logger=logger))
+    if not FLAGS.profile_usev2:
+      print(counter.profile(model, input_size=(1,3,224,224), logger=logger, is_cnn=True))
+    else:
+      counter_v2.calculate_FLOPs_scale(model, input_size=(1,3,224,224), use_gpu=FLAGS.use_cuda)
   else:
     compose_trans = transforms.Compose([
       transforms.ToTensor()
@@ -184,6 +192,7 @@ def main(argv):
         _cudart.cudaProfilerStop()
     final_time = time.time() - start_time
     logger.info("Finished: ran for %d secs", final_time)
+    
 if __name__ == "__main__":
   app.run(main)
 

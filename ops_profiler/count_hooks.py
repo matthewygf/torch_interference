@@ -2,7 +2,7 @@
 # reason is that they do not take skipconnect into account
 # more specifically, for now looking torch versions
 # considering torch/vision modules
-# TODO: TF: look at profiler float ops
+# TODO: not working properly it seems.
 import argparse
 
 import torch
@@ -17,10 +17,12 @@ def count_convNd(m, x, y):
     kernel_ops = m.weight.size()[2:].numel()
     bias_ops = 1 if m.bias is not None else 0
     ops_per_element = kernel_ops + bias_ops
+    ops_per_element = ops_per_element * multiply_adds
+    ops_per_element = ops_per_element * (cin // m.groups)
     output_elements = y.nelement()
 
     # cout x oW x oH
-    total_ops = cin * output_elements * ops_per_element // m.groups
+    total_ops = ops_per_element * output_elements 
     m.total_ops = torch.Tensor([int(total_ops)])
 
 
@@ -100,9 +102,9 @@ def count_bn(m, x, y):
 
     nelements = x.numel()
     # subtract, divide, gamma, beta
-    total_ops = 4 * nelements
+    # total_ops = 4 * nelements
 
-    m.total_ops = torch.Tensor([int(total_ops)])
+    m.total_ops = torch.Tensor([int(nelements)])
 
 
 def count_swish(m, x, y):
@@ -176,9 +178,13 @@ def count_adap_avgpool(m, x, y):
 
 def count_linear(m, x, y):
     # per output element
-    total_mul = m.in_features
+    total_mul = m.in_features * multiply_adds
     total_add = m.in_features - 1
     num_elements = y.numel()
     total_ops = (total_mul + total_add) * num_elements
 
     m.total_ops = torch.Tensor([int(total_ops)])
+
+def count_lstm(m, x, y):
+   print(m)
+   

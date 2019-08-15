@@ -10,6 +10,7 @@ from allennlp.common.file_utils import cached_path
 
 # TODO: I am not sure how to use this PennTreeBank yet :/
 from allennlp.data.dataset_readers import PennTreeBankConstituencySpanDatasetReader, UniversalDependenciesDatasetReader, Seq2SeqDatasetReader, LanguageModelingReader
+from languages_data.wikitext_dataset_reader import WikiTextDatasetReader
 from allennlp.data.vocabulary import Vocabulary
 
 from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
@@ -21,6 +22,7 @@ from allennlp.training.trainer import Trainer
 from languages_data import pos_data_reader, embeddings_factory, iterators_factory, datasets_factory, preprocessing_factory
 from language_models import models_factory, datareader_cfg_factory
 from languages_predictors import predictors_factory
+from ops_profiler.flop_counter import *
 
 import time
 import utils as U
@@ -56,6 +58,8 @@ flags.DEFINE_float('drop_out', 0., 'dropout rate, if it is RNN base: for outputs
 flags.DEFINE_boolean('bidirectional', False, 'if it is RNNbase, whether it becomes bidirectional RNN')
 flags.DEFINE_integer('max_len', 40, 'maximum length to generate tokens')
 flags.DEFINE_integer('num_layers', 1, 'number of layers of recurrent models')
+flags.DEFINE_interger('max_length_sentence', 200, 'maxium length per sentence for the encoder')
+flags.DEFINE_bool('profile_only', False, 'Profile the model and exit.')
 
 #TODO: DATA PARALLEL / MODEL PARALLEL
 
@@ -70,7 +74,7 @@ data_reader_factory = {
   'ptb_tree': PennTreeBankConstituencySpanDatasetReader,
   'ud-eng': UniversalDependenciesDatasetReader,
   'nc_zhen': Seq2SeqDatasetReader,
-  'wikitext': LanguageModelingReader
+  'wikitext': WikiTextDatasetReader
 }
 
 test_sentences = {
@@ -97,7 +101,8 @@ def main(argv):
 
   cfgs = datareader_cfg_factory.get_datareader_configs(FLAGS.dataset)
   if cfgs is not None:
-    reader = data_reader_factory[FLAGS.dataset](cfgs)
+    cfgs.update({'max_length_sentence': FLAGS.max_length_sentence})
+    reader = data_reader_factory[FLAGS.dataset](**cfgs)
   else:
     reader = data_reader_factory[FLAGS.dataset]()
 
@@ -138,6 +143,10 @@ def main(argv):
   }
 
   out_feature_key, model = models_factory.get_model_fn(**models_args)
+  if FLAGS.profile_only:
+    # language
+    torch.save(model, "model.pth")
+    return
 
   model = model.to(device)
 
@@ -187,6 +196,7 @@ def main(argv):
       print([model.vocab.get_token_from_index(i, out_feature_key) for i in top_ids])
     else:
       print(pred_logits)
+
   final_time = time.time() - start_time
   logger.info("Finished application: ran for %d secs", final_time)
   

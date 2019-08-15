@@ -5,8 +5,8 @@
 import torch
 import torch.nn as nn
 from torch.nn.modules.conv import _ConvNd
-from ..model import MBConvBlock, SwishActivation
-from ..utils import Conv2dSamePadding, Pad2d
+from image_models.model import MBConvBlock, SwishActivation
+from image_models.utils import Conv2dSamePadding, Pad2d
 from .count_hooks import *
 
 register_hooks = {
@@ -19,7 +19,6 @@ register_hooks = {
     Conv2dSamePadding: count_convNd,
     Pad2d: count_pad2d,
     MBConvBlock: count_mbconv_misc,
-
     
     nn.BatchNorm1d: count_bn,
     nn.BatchNorm2d: count_bn,
@@ -46,6 +45,7 @@ register_hooks = {
     nn.AdaptiveAvgPool3d: count_adap_avgpool,
     nn.Linear: count_linear,
     nn.Dropout: None,
+    nn.LSTM: count_lstm
 }
 
 activation_sets = set(['softmax', 'sigmoid', 'relu', 'tan', 'relu6'])
@@ -88,27 +88,32 @@ def profile(model, input_size, custom_ops={}, device="cpu", logger=None, is_cnn=
     total_convs = 0
     total_linear = 0
     total_activation = 0
+    total_rnns = 0
     total_others = 0
     for idx, name_mod in enumerate(model.named_modules()):
-        if len(list(name_mod[1].children())) > 1: continue
+        if len(list(name_mod[1].children())) >= 1: continue
         # NOTE: DOES NOT COUNT SKIP_CONNECT
         # NOTE: DOES NOT COUNT ATTENTION
         name = str(name_mod[1].__class__.__name__).lower()
         print(idx ,'-->', name_mod[0])
+        print(name)
         if 'conv' in name:
             total_convs += 1
         elif 'linear' in name:
             total_linear += 1
         elif name in activation_sets:
             total_activation +=1 
+        elif 'lstm' in name or 'gru' in name:
+            total_rnns += 1
         else:
             total_others += 1
 
     logger.info("Count total num of register modules: %d", len(handler_collection))
-    x = torch.zeros(input_size).to(device)
 
+    x = torch.zeros(input_size).to(device)
     with torch.no_grad():
-        model(x)
+      model(x)
+      
 
     total_ops = 0
     total_params = 0
