@@ -1,3 +1,4 @@
+import os
 from absl import app
 from absl import flags
 # using predefined set of models
@@ -7,7 +8,8 @@ from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 from image_models.model import EfficientNet
 from image_models.resnext import *
-from image_models.pnasnet import *
+from image_models.DPN import *
+from image_models.pyramidnet import *
 
 import torch
 import torch.optim as optim
@@ -48,6 +50,63 @@ flags.mark_flag_as_required('run_name')
 flags.mark_flag_as_required('model')
 flags.mark_flag_as_required('dataset_dir')
 
+def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
+    """3x3 convolution with padding"""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                     padding=dilation, groups=groups, bias=False, dilation=dilation)
+
+
+def conv1x1(in_planes, out_planes, stride=1):
+    """1x1 convolution"""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+
+
+class Bottleneck(nn.Module):
+    expansion = 4
+
+    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
+                 base_width=64, dilation=1, norm_layer=None):
+        super(Bottleneck, self).__init__()
+        if norm_layer is None:
+            norm_layer = nn.BatchNorm2d
+        width = int(planes * (base_width / 64.)) * groups
+        # Both self.conv2 and self.downsample layers downsample the input when stride != 1
+        self.conv1 = conv1x1(inplanes, width)
+        self.bn1 = norm_layer(width)
+        self.conv2 = conv3x3(width, width, stride, groups, dilation)
+        self.bn2 = norm_layer(width)
+        self.conv3 = conv1x1(width, planes * self.expansion)
+        self.bn3 = norm_layer(planes * self.expansion)
+        self.relu = nn.ReLU(inplace=True)
+        self.downsample = downsample
+        self.stride = stride
+
+    def forward(self, x):
+        identity = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        if self.downsample is not None:
+            identity = self.downsample(x)
+
+        out += identity
+        out = self.relu(out)
+
+        return out
+
+def resnet_wide_18_2(pretrained=False, **kwargs):
+  return models.ResNet(Bottleneck, [2,2,2,2], width_per_group=64 * 2, **kwargs)
+
+
 models_factory = {
   'googlenet': models.googlenet,
   'squeezenet1_0': models.squeezenet1_0,
@@ -68,19 +127,26 @@ models_factory = {
   'densenet161': models.densenet161,
   'densenet169': models.densenet169,
   'densenet40': models.DenseNet,
-  'efficientnet_b0': EfficientNet.from_name,
-  'efficientnet_b1': EfficientNet.from_name,
-  'efficientnet_b2': EfficientNet.from_name,
-  'efficientnet_b3': EfficientNet.from_name,
-  'efficientnet_b4': EfficientNet.from_name,
   'vgg11': models.vgg11,
   'vgg11_bn': models.vgg11_bn,
   'vgg19': models.vgg19,
-  'pnasb': PNASNetB 
+  # new
+  'mnasnet0_5': models.mnasnet0_5,
+  'mnasnet1_0': models.mnasnet1_0,
+  'mnasnet1_3': models.mnasnet1_3,
+  'dpn92': DPN92,
+  'dpn26': DPN26,
+  'dpn26_small': DPN26_small,
+  'pyramidnet_48_110': pyramidnet_48_110,
+  'pyramidnet_84_66': pyramidnet_84_66,
+  'pyramidnet_84_110': pyramidnet_84_110,
+  'pyramidnet_270_110_bottleneck': pyramidnet_270_110_bottleneck,
+  'resnet_wide_18_2': resnet_wide_18_2
 }
 
 datasets_factory = {
-  'cifar10': predefined_datasets.CIFAR10
+  'cifar10': predefined_datasets.CIFAR10,
+  'imagenet': None
 }
 
 datasets_shape = {
@@ -90,32 +156,47 @@ datasets_shape = {
 
 datasets_sizes = {
   'cifar10': 10,
-  'imagenet': 100
+  'imagenet': 1000
 }
 
-def train(logger, model, device, train_loader, optimizer, epoch, loss_op):
-  model.train()
+def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, is_train=True):
+  if is_train:
+    model.train()
+  else:
+    logger.info("Eval Starts")
+    model.eval()
+
+  mode = 'train' if is_train else 'eval' 
   epoch_start = time.time()
-  for batch_idx, (data, target) in enumerate(train_loader):
+  for batch_idx, (data, target) in enumerate(loader):
     data, target = data.to(device), target.to(device)
-    optimizer.zero_grad()
+    if is_train:
+      optimizer.zero_grad()
     start_time = time.time()
     pred = model(data)
-    loss = loss_op(pred, target)
-    loss.backward()
-    optimizer.step()
+    if is_train:
+      loss = loss_op(pred, target)
+      loss.backward()
+      optimizer.step()
     time_elapsed = time.time() - start_time
-    if batch_idx == 0:
-      logger.info("First step of this epoch: %s", str(datetime.datetime.utcnow()))
-    
-    if batch_idx == len(train_loader) - 1:
-      epoch_elapsed = time.time() - epoch_start
-      logger.info("Last step of this epoch: %s, ran for %.4f", str(datetime.datetime.utcnow()), epoch_elapsed)
+    if epoch is not None:
+      if batch_idx == 0:
+        logger.info("First step of this epoch: %s", str(datetime.datetime.utcnow()))
+      
+      if batch_idx == len(loader) - 1:
+        epoch_elapsed = time.time() - epoch_start
+        logger.info("Last step of this epoch: %s, ran for %.4f", str(datetime.datetime.utcnow()), epoch_elapsed)
 
-    if batch_idx % FLAGS.log_interval == 0:
-      logger.info("Epoch %d: %d/%d [Loss: %.4f] (%.4f sec/step)", 
-                  epoch, batch_idx*len(data), 
-                  len(train_loader.dataset), loss.item(), time_elapsed)
+      if batch_idx % FLAGS.log_interval == 0:
+        logger.info("Epoch %d: %d/%d [Loss: %.4f] (%.4f sec/step)", 
+                    epoch, batch_idx*len(data), 
+                    len(loader.dataset), loss.item(), time_elapsed)
+    else:
+      if batch_idx % FLAGS.log_interval == 0 :
+        _, predicted = torch.max(pred.data, 1)
+        b_size = target.size(0)
+        acc = (predicted == target).sum().item()
+        logger.info("[acc: %.4f] (%.4f sec/step)", acc/b_size , time_elapsed)
 
 def main(argv):
   del argv
@@ -125,11 +206,14 @@ def main(argv):
   _cudart = U.get_cudart()
   if _cudart is None:
     logger.warning("No cudart, probably means you do not have cuda on this machine.")
-  device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
+  if not FLAGS.profile_only:
+    device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
+  else:
+    device = torch.device("cpu")
   model_fn = models_factory[FLAGS.model]
   dataset_fn = datasets_factory[FLAGS.dataset]
   dataset_classes = datasets_sizes[FLAGS.dataset]
-  # TODO: Really need to start to change this better soon :/
+  # TODO: use a Dict and update.
   if 'google' in FLAGS.model: 
     model = model_fn(pretrained=False, transform_input=False, aux_logits=False, num_classes=dataset_classes)
   elif 'mobilenet_large' in FLAGS.model:
@@ -148,16 +232,17 @@ def main(argv):
     model = model_fn(FLAGS.model, {'num_classes': dataset_classes})
   elif 'densenet40' in FLAGS.model:
     model = model_fn(num_classes=dataset_classes, growth_rate=12, num_init_features=16, block_config=(12,12,12))
+  elif 'pyramid' in FLAGS.model:
+    model = model_fn(dataset=FLAGS.dataset, num_classes=dataset_classes)
   else:
     model = model_fn(pretrained=False, num_classes=dataset_classes)
 
   model = model.to(device)
 
   if FLAGS.profile_only:
-    if not FLAGS.profile_usev2:
-      print(counter.profile(model, input_size=(1,3,224,224), logger=logger, is_cnn=True))
-    else:
-      counter_v2.calculate_FLOPs_scale(model, input_size=(1,3,224,224), use_gpu=FLAGS.use_cuda)
+    stats = counter.profile(model, input_size=(FLAGS.batch_size,) + (datasets_shape[FLAGS.dataset]), logger=logger, is_cnn=True)
+    logger.info("DNN_Features: %s", str(stats))
+    print("DNN_Features: ", str(stats))
   else:
     compose_trans = transforms.Compose([
       transforms.ToTensor()
@@ -174,7 +259,6 @@ def main(argv):
                             shuffle=False, 
                             num_workers=2)
     
-
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
     loss_op = torch.nn.CrossEntropyLoss()
     start_time = time.time()
@@ -184,9 +268,11 @@ def main(argv):
       else:
         status = None
       for epoch in range(1, FLAGS.max_epochs+1):
-        train(logger, model, device, train_loader, optimizer, epoch, loss_op)
-        #TODO: validation.
-        # don't care about accuracy for now.
+        compute(logger, model, device, train_loader, optimizer, loss_op, epoch=epoch, is_train=True)
+        # TODO: OOM when in eval mode, not sure why, 
+        # unless its like tensorflow, train and eval has different graph
+        # and need explicit share parameters???
+        # compute(logger, model, device, val_loader, optimizer, loss_op, is_train=False)
     finally:
       if status == 0:
         _cudart.cudaProfilerStop()
