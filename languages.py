@@ -81,7 +81,7 @@ data_reader_factory = {
 test_sentences = {
   'debug' : 'I am your father',
   'nc_zhen' : 'I am your father',
-  'ud-eng': ['I', 'am', 'your', 'father']
+  'ud-eng': ['I', 'am', 'your', 'father'],
 }
 
 optimizers_factory = {

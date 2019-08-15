@@ -146,7 +146,9 @@ models_factory = {
 
 datasets_factory = {
   'cifar10': predefined_datasets.CIFAR10,
-  'imagenet': None
+  'imagenet': None,
+  'fashionmnist': predefined_datasets.FashionMNIST,
+  'svhn': predefined_datasets.SVHN,
 }
 
 datasets_shape = {

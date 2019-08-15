@@ -19,9 +19,9 @@ googlenet_cmd = ['python', 'image_classifier.py', '--model', 'googlenet', '--use
 inceptionv3_cmd = ['python', 'image_classifier.py', '--model', 'inception_v3', '--use_cuda', 'True', '--max_epochs', '5' ]
 mobilenetv2_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet', '--use_cuda', 'True', '--max_epochs', '5', ]
 mobilenetv2_large_cmd = ['python', 'image_classifier.py', '--model', 'mobilenet_large', '--use_cuda', 'True', '--max_epochs', '5' ]
-vgg11_cmd = ['python', 'image_classifier.py', '--model', 'vgg11', '--use_cuda', 'True', '--max_epochs', '5', '--batch_size',str(_default_batch_size)]
-vgg11bn_cmd = ['python', 'image_classifier.py', '--model', 'vgg11_bn', '--use_cuda', 'True', '--max_epochs', '5', '--batch_size',str(_default_batch_size)]
-vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '5', '--batch_size',str(_default_batch_size)]
+vgg11_cmd = ['python', 'image_classifier.py', '--model', 'vgg11', '--use_cuda', 'True', '--max_epochs', '5']
+vgg11bn_cmd = ['python', 'image_classifier.py', '--model', 'vgg11_bn', '--use_cuda', 'True', '--max_epochs', '5']
+vgg19_cmd = ['python', 'image_classifier.py', '--model', 'vgg19', '--use_cuda', 'True', '--max_epochs', '5']
 resnet18_cmd = ['python', 'image_classifier.py', '--model', 'resnet18', '--use_cuda', 'True', '--max_epochs', '5' ]
 resnext29_2x64_cmd = ['python', 'image_classifier.py', '--model', 'resnext29_2x64d', '--use_cuda', 'True', '--max_epochs', '5' ]
 resnext11_2x16_cmd = ['python', 'image_classifier.py', '--model', 'resnext11_2x16d', '--use_cuda', 'True', '--max_epochs', '5' ]
@@ -55,18 +55,18 @@ resnet_wide_18_2_bottleneck_cmd = ['python', 'image_classifier.py', '--model', '
 # NOTE: NLPs
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '6', '--task', 'pos', '--use_cuda', 'True']
 # NOTE: these mt tasks aren't very good , feel free to tune, most likely because of "number of vocabs".
-mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '10000', '--batch_size', '16' ,'--use_cuda', 'True']
-mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '64', '--hiddens_dim', '128' '--task', 'mt', '--max_vocabs', '10000','--batch_size', '16', '--use_cuda', 'True']
+mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '10000', '--batch_size', '16' ,'--use_cuda', 'True',  '--max_sentence_length', '250']
+mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '64', '--hiddens_dim', '128' '--task', 'mt', '--max_vocabs', '10000','--batch_size', '16', '--use_cuda', 'True', '--max_sentence_length', '250']
 # NOTE: language model need some tuning too.
-lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '64', '--max_len', '30', '--hiddens_dim', '64', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3']
-lm_med_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '1', '--max_length_sentence', '250']
-lm_large_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '2', '--max_length_sentence', '250']
+lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '64', '--max_len', '30', '--hiddens_dim', '64', '--max_vocabs', '10000',  '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3']
+lm_med_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '1', '--max_sentence_length', '250']
+lm_large_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '2', '--max_sentence_length', '250']
 
 
 # NOTE: MISCs
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', '--csv',]
 pmon_mod_cmd = ['pmon', '--csv=true', '--interval=250']
-pcie_mod_cmd = ['pcie', '--csv=true', '--interval=250']
+pcie_mod_cmd = ['pcie', '--csv=true', '--interval=250', '--once=false']
 
 models_train = {
     'mnasnet0_5_cmd': mnasnet0_5_cmd,
@@ -101,11 +101,11 @@ models_train = {
     'shufflenet_2_0_cmd': shufflenet_2_0_cmd,
     'shufflenet_1_0_cmd': shufflenet_1_0_cmd,
     'shufflenet_0_5_cmd': shufflenet_0_5_cmd,
-    'efficientnetb4_cmd': eff_b4_cmd, 
-    'efficientnetb3_cmd': eff_b3_cmd,
-    'efficientnetb2_cmd': eff_b2_cmd,
-    'efficientnetb1_cmd': eff_b1_cmd,
-    'efficientnetb0_cmd': eff_b0_cmd,
+    # 'efficientnetb4_cmd': eff_b4_cmd, 
+    # 'efficientnetb3_cmd': eff_b3_cmd,
+    # 'efficientnetb2_cmd': eff_b2_cmd,
+    # 'efficientnetb1_cmd': eff_b1_cmd,
+    # 'efficientnetb0_cmd': eff_b0_cmd,
     'pnasb_cmd': pnasb_cmd,
     'pos_cmd': pos_cmd,
     'mt1_cmd': mt1_cmd,
