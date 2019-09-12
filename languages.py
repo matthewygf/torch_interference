@@ -19,6 +19,7 @@ from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_lo
 from allennlp.models import Model
 
 from allennlp.training.trainer import Trainer
+from allennlp.training.checkpointer import Checkpointer
 
 from languages_data import pos_data_reader, embeddings_factory, iterators_factory, datasets_factory, preprocessing_factory
 from language_models import models_factory, datareader_cfg_factory
@@ -61,6 +62,7 @@ flags.DEFINE_integer('max_len', 40, 'maximum length to generate tokens')
 flags.DEFINE_integer('num_layers', 1, 'number of layers of recurrent models')
 flags.DEFINE_integer('max_sentence_length', 200, 'maxium length per sentence for the encoder')
 flags.DEFINE_bool('profile_only', False, 'Profile the model and exit.')
+flags.DEFINE_string('ckpt_dir', '/tmp/ckpt', 'the directory to load and save ckpt')
 
 #TODO: DATA PARALLEL / MODEL PARALLEL
 
@@ -158,12 +160,17 @@ def main(argv):
 
   iterator.index_with(vocab)
   cuda_device = 0 if FLAGS.use_cuda else -1 # TODO: multi GPU
+  # NOTE: THIS CKPT Mechanism only ckpt at the end of every epoch.
+  # if an epoch is more than 1 day, then you take care of it yourself :P
+  ckpter = Checkpointer(serialization_dir=FLAGS.ckpt_dir, num_serialized_models_to_keep=2)
   trainer = Trainer(model=model,
                     optimizer=optimizer,
                     iterator=iterator,
                     train_dataset=train_dataset,
+                    serialization_dir=FLAGS.ckpt_dir,
                     validation_dataset=validation_dataset,
                     num_epochs=FLAGS.max_epochs,
+                    checkpointer=ckpter,
                     log_batch_size_period = 10,
                     cuda_device=cuda_device)
                     
