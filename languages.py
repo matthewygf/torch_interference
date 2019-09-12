@@ -182,9 +182,11 @@ def main(argv):
   # TODO: VERY ROUGH.
   if FLAGS.task == 'lm':
     for _ in range(50):
-      tokens, _ = model.generate(device, FLAGS.num_layers)
-    logger.info("GENERATED WORDS:")
-    logger.info(''.join(token.text for token in tokens))
+      state = (torch.zeros(FLAGS.num_layers, 1, FLAGS.hiddens_dim).to(device),
+        torch.zeros(FLAGS.num_layers, 1, FLAGS.hiddens_dim).to(device))
+      tokens, _ = model.generate(device, state)
+      logger.info("GENERATED WORDS:")
+      logger.info(' '.join(token.text for token in tokens))
   else:
     predictor = predictors_factory.get_predictors(FLAGS.dataset, model, reader)
     test_tokens_or_sentence = test_sentences[FLAGS.dataset]
