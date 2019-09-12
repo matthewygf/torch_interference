@@ -23,6 +23,7 @@ import ops_profiler.flop_counter_v2 as counter_v2
 
 import signal
 import sys
+from functools import partial
 
 torch.manual_seed(0)
 torch.backends.cudnn.deterministic = True
@@ -45,6 +46,7 @@ flags.DEFINE_integer('log_interval', 10, 'Batch intervals to log')
 flags.DEFINE_integer('max_epochs', 5, 'maximum number of epochs to run')
 flags.DEFINE_bool('profile_only', False, 'profile model FLOPs and Params only, not running the training procedure')
 flags.DEFINE_bool('profile_usev2', False, 'profile model FLOPs and Params using another ver., not running the training procedure')
+flags.DEFINE_string('ckpt_dir', '/tmp/ckpt', 'directory to save ckpt')
 
 flags.mark_flag_as_required('run_name')
 flags.mark_flag_as_required('model')
@@ -105,7 +107,6 @@ class Bottleneck(nn.Module):
 
 def resnet_wide_18_2(pretrained=False, **kwargs):
   return models.ResNet(Bottleneck, [2,2,2,2], width_per_group=64 * 2, **kwargs)
-
 
 models_factory = {
   'googlenet': models.googlenet,
@@ -200,6 +201,13 @@ def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, is_tr
         acc = (predicted == target).sum().item()
         logger.info("[acc: %.4f] (%.4f sec/step)", acc/b_size , time_elapsed)
 
+
+def save_ckpt(logger, epoch, model, optimizer):
+  logger.info("saving ckpt: %d", epoch)
+  states = {'epoch': epoch, 'model_state_dict': model.state_dict(), 'optim_state_dict': optimizer.state_dict()}
+  ckpt_path = os.path.join(FLAGS.ckpt_dir, 'model_state_epoch.pth')
+  torch.save(states, ckpt_path)
+
 def main(argv):
   del argv
   
@@ -212,9 +220,13 @@ def main(argv):
     device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
   else:
     device = torch.device("cpu")
+
   model_fn = models_factory[FLAGS.model]
   dataset_fn = datasets_factory[FLAGS.dataset]
   dataset_classes = datasets_sizes[FLAGS.dataset]
+  
+  have_ckpt = (FLAGS.ckpt_dir is not None and any("model_state_epoch" in x for x in os.listdir(FLAGS.ckpt_dir)))
+  
   # TODO: use a Dict and update.
   if 'google' in FLAGS.model: 
     model = model_fn(pretrained=False, transform_input=False, aux_logits=False, num_classes=dataset_classes)
@@ -238,6 +250,28 @@ def main(argv):
     model = model_fn(dataset=FLAGS.dataset, num_classes=dataset_classes)
   else:
     model = model_fn(pretrained=False, num_classes=dataset_classes)
+  
+  optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+  if have_ckpt:
+    files = os.listdir(FLAGS.ckpt_dir)
+    model_checkpoints = [x for x in files if "model_state_epoch" in x]
+    logger.info("**********Found ckpt: %s" % model_checkpoints[-1])
+    # TODO: found the epoch ckpt, for now we just keep one.
+    ckpt_path = os.path.join(FLAGS.ckpt_dir, model_checkpoints[-1])
+    ckpt = torch.load(ckpt_path)
+    current_epochs = ckpt['epoch']
+    model.load_state_dict(ckpt['model_state_dict'])
+    optimizer.load_state_dict(ckpt['optim_state_dict'])
+    # Move to device. 
+    for state in optimizer.state.values():
+      for k, v in state.items():
+        if isinstance(v, torch.Tensor):
+          state[k] = v.to(device)
+    logger.info("******Loaded ckpt")
+  else:
+    logger.info("No ckpt found")
+    current_epochs = 1
 
   model = model.to(device)
 
@@ -261,23 +295,25 @@ def main(argv):
                             shuffle=False, 
                             num_workers=2)
     
-    optimizer = optim.Adam(model.parameters(), lr=0.0001)
     loss_op = torch.nn.CrossEntropyLoss()
     start_time = time.time()
+
     try:
       if _cudart is not None:
         status = _cudart.cudaProfilerStart()
       else:
         status = None
-      for epoch in range(1, FLAGS.max_epochs+1):
+      for epoch in range(current_epochs, FLAGS.max_epochs+1):
         compute(logger, model, device, train_loader, optimizer, loss_op, epoch=epoch, is_train=True)
-        # TODO: OOM when in eval mode, not sure why, 
-        # unless its like tensorflow, train and eval has different graph
-        # and need explicit share parameters???
-        # compute(logger, model, device, val_loader, optimizer, loss_op, is_train=False)
+        # TODO: OOM when in eval mode, need to set torch.nograd:
+        # NOTE: currently just ckpt every epoch
+        # plus 1 because next time around is inclusive.
+        save_ckpt(logger, epoch+1, model, optimizer)
+
     finally:
       if status == 0:
         _cudart.cudaProfilerStop()
+
     final_time = time.time() - start_time
     logger.info("Finished: ran for %d secs", final_time)
     
