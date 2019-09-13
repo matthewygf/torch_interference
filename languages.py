@@ -189,8 +189,9 @@ def main(argv):
   # TODO: VERY ROUGH.
   if FLAGS.task == 'lm':
     for _ in range(50):
-      state = (torch.zeros(FLAGS.num_layers, 1, FLAGS.hiddens_dim).to(device),
-        torch.zeros(FLAGS.num_layers, 1, FLAGS.hiddens_dim).to(device))
+      bidir_state = 2*FLAGS.num_layers if FLAGS.bidirectional else FLAGS.num_layers
+      state = (torch.zeros(bidir_state, 1, FLAGS.hiddens_dim).to(device),
+        torch.zeros(bidir_state, 1, FLAGS.hiddens_dim).to(device))
       tokens, _ = model.generate(device, state)
       logger.info("GENERATED WORDS:")
       logger.info(' '.join(token.text for token in tokens))
