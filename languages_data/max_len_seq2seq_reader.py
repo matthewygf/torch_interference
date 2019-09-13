@@ -58,3 +58,13 @@ class MaxLengthSeq2SeqReader(Seq2SeqDatasetReader):
         return Instance({"source_tokens": source_field, "target_tokens": target_field})
     else:
         return Instance({'source_tokens': source_field})
+  
+  @overrides
+  def _read(self, file_path):
+    with open(cached_path(file_path), "r", encoding="utf-8") as data_file:
+        logger.info("Reading instances from lines in file at: %s", file_path)
+        for line_num, row in enumerate(csv.reader(data_file, delimiter=self._delimiter)):
+            if len(row) != 2:
+                raise ConfigurationError("Invalid line format: %s (line number %d)" % (row, line_num + 1))
+            source_sequence, target_sequence = row
+            yield self.text_to_instance(source_sequence, target_sequence)
