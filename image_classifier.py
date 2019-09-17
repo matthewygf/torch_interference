@@ -308,7 +308,8 @@ def main(argv):
         # TODO: OOM when in eval mode, need to set torch.nograd:
         # NOTE: currently just ckpt every epoch
         # plus 1 because next time around is inclusive.
-        save_ckpt(logger, epoch+1, model, optimizer)
+        if FLAGS.ckpt_dir is not None:
+          save_ckpt(logger, epoch+1, model, optimizer)
 
     finally:
       if status == 0:
