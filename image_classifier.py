@@ -46,7 +46,7 @@ flags.DEFINE_integer('log_interval', 10, 'Batch intervals to log')
 flags.DEFINE_integer('max_epochs', 5, 'maximum number of epochs to run')
 flags.DEFINE_bool('profile_only', False, 'profile model FLOPs and Params only, not running the training procedure')
 flags.DEFINE_bool('profile_usev2', False, 'profile model FLOPs and Params using another ver., not running the training procedure')
-flags.DEFINE_string('ckpt_dir', '/tmp/ckpt', 'directory to save ckpt')
+flags.DEFINE_string('ckpt_dir', None, 'directory to save ckpt')
 
 flags.mark_flag_as_required('run_name')
 flags.mark_flag_as_required('model')
