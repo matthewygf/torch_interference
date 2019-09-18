@@ -236,7 +236,7 @@ def run(
               time.sleep(2)
           out.close()
           err.close()
-    
+
     for experiment_run in range(_START, _RUNS_PER_SET+_START):
         if not _PROF_ONLY:
             if os.path.exists(average_log):
@@ -249,8 +249,17 @@ def run(
         out_file_paths = []
         start_times = []
         ids = {}
+        pmon_log_path = os.path.join(experiment_path, str(experiment_run)+'pmon.log')
+        pmon_log = open(pmon_log_path, 'a+')
+        pmon_csv = os.path.join(experiment_path, str(experiment_run)+'pmon.csv')
+        pmon_cmd = copy.deepcopy(models_train['pmon_mod_cmd'])
+        pmon_cmd += ['--logpath='+pmon_csv]
+        pmon_p = subprocess.Popen(pmon_cmd, stdout=pmon_log, stderr=pmon_log)
+        pmon_poll = None
         percent = (1 / len(experiment_set)) - 0.075 # some overhead of cuda stuff i think :/
         for i, m in enumerate(experiment_set):
+            if i > 0:
+              time.sleep(20)
             start_time = time.time()
             p, out, err, path, out_dir = create_process(batch_size, m, i, experiment_path, percent)
             processes_list.append(p)
@@ -265,13 +274,7 @@ def run(
 
         try:
             if not _PROF_ONLY:
-                pmon_log_path = os.path.join(experiment_path, str(experiment_run)+'pmon.log')
-                pmon_log = open(pmon_log_path, 'a+')
-                pmon_csv = os.path.join(experiment_path, str(experiment_run)+'pmon.csv')
-                pmon_cmd = copy.deepcopy(models_train['pmon_mod_cmd'])
-                pmon_cmd += ['--logpath='+pmon_csv]
-                pmon_p = subprocess.Popen(pmon_cmd, stdout=pmon_log, stderr=pmon_log)
-                pmon_poll = None
+                
 
                 pcie_log_path = os.path.join(experiment_path, str(experiment_run)+'pcie.log')
                 pcie_log = open(pcie_log_path, 'a+')
@@ -317,13 +320,14 @@ def run(
                     if smi_poll is None:
                         print('NVIDIA_SMI Process %d still running' % smi_p.pid)
                     
-                    pmon_poll = pmon_p.poll()
-                    if pmon_poll is None:
-                        print('PMON Process %d still running' % pmon_p.pid)
-
                     pcie_poll = pcie_p.poll()
                     if pcie_poll is None:
                         print('PCIe mon Process %d still running' % pcie_p.pid)
+
+
+                pmon_poll = pmon_p.poll()
+                if pmon_poll is None:
+                    print('PMON Process %d still running' % pmon_p.pid)
 
             print('total experiments: %d, experiment_run %d , finished %d' % (total_length-1, experiment_run, experiment_index))
 
@@ -341,10 +345,10 @@ def run(
                 print("done")
         finally:
             print("final")
+            pmon_p.kill()
+            pmon_log.close()
             if not _PROF_ONLY:
                 smi_poll = smi_p.poll()
-                pmon_p.kill()
-                pmon_log.close()
                 pcie_p.kill()
                 pcie_log.close()
                 if smi_poll is None:
