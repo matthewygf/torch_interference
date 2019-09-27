@@ -196,6 +196,7 @@ def main(argv):
       logger.info("GENERATED WORDS:")
       logger.info(' '.join(token.text for token in tokens))
   else:
+    model.eval()
     predictor = predictors_factory.get_predictors(FLAGS.dataset, model, reader)
     test_tokens_or_sentence = test_sentences[FLAGS.dataset]
     pred_logits = predictor.predict(test_tokens_or_sentence)
@@ -207,8 +208,8 @@ def main(argv):
       top_ids = np.argmax(pred_logits, axis=-1)
       print([model.vocab.get_token_from_index(i, out_feature_key) for i in top_ids])
     else:
-      print(pred_logits)
-
+      pred_logits["predictions"] = np.asarray(pred_logits["predictions"])
+      logger.info(model.decode(pred_logits))
   final_time = time.time() - start_time
   logger.info("Finished application: ran for %d secs", final_time)
   
