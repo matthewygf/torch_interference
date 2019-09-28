@@ -7,7 +7,6 @@ from image_models.model import EfficientNet
 from image_models.utils import save_ckpt
 import image_models.factory as model_factory
 import train_utils.data as data_utils
-import train_utils.distribute as distribute_utils
 
 import torch
 import torch.optim as optim
@@ -78,10 +77,10 @@ datasets_sizes = {
   'imagenet': 1000
 }
 
-def _compute(device, dataloader, is_train, model, optimizer, loss_op, logger, epoch=None):
+def _compute(device, dataloader, is_train, model, optimizer, loss_op, logger, epoch=None, non_blocking=False):
   epoch_start = time.time()
   for batch_idx, (data, target) in enumerate(dataloader):
-    data, target = data.to(device), target.to(device)
+    data, target = data.to(device, non_blocking=non_blocking), target.to(device, non_blocking=non_blocking)
     if is_train:
       optimizer.zero_grad()
     start_time = time.time()
@@ -218,9 +217,6 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   # NOTE: this is assumed to be in distributed GPUs
   logger = U.get_logger(__name__+proc_flags['run_name'])
   logger.info("run: %s, specified model: %s, dataset: %s", proc_flags['run_name'], proc_flags['model'], proc_flags['dataset'])
-  _cudart = U.get_cudart()
-  if _cudart is None:
-    logger.warning("No cudart, probably means you do not have cuda on this machine.")
  
   # at this point, rank is just machine rank.
   rank = proc_flags['rank']
@@ -253,32 +249,42 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   # load ckpt if ckpt exists.
   ckpt_dir = proc_flags['ckpt_dir']
   have_ckpt = (ckpt_dir is not None and any("model_state_epoch" in x for x in os.listdir(ckpt_dir)))
-
+  location = "cuda:%d" % gpu_index
+  device = torch.device(location)
   if have_ckpt:
     files = os.listdir(ckpt_dir)
     model_checkpoints = [x for x in files if "model_state_epoch" in x]
     logger.info("**********Found ckpt: %s" % model_checkpoints[-1])
     # TODO: found the epoch ckpt, for now we just keep one.
-    ckpt_path = os.path.join(FLAGS.ckpt_dir, model_checkpoints[-1])
+    ckpt_path = os.path.join(ckpt_dir, model_checkpoints[-1])
     # NOTE: map model to be loaded to specified single GPU
-    location = "cuda:%d" % gpu_index
     ckpt = torch.load(ckpt_path, map_location=location)
     current_epochs = ckpt['epoch']
     model.load_state_dict(ckpt['model_state_dict'])
     optimizer.load_state_dict(ckpt['optim_state_dict'])
     # Move to device. 
-    # for state in optimizer.state.values():
-    #   for k, v in state.items():
-    #     if isinstance(v, torch.Tensor):
-    #       state[k] = v.to(device)
+    for state in optimizer.state.values():
+      for k, v in state.items():
+        if isinstance(v, torch.Tensor):
+          state[k] = v.to(device)
     logger.info("******Loaded ckpt")
   else:
     logger.info("No ckpt found")
     current_epochs = 1
 
   torch.backends.cudnn.deterministic = True
+  dataset_dir = proc_flags['dataset_dir']
+  sampler, dist_train_loader, val_loader = data_utils.get_distribute_dataloader(dataset_fn, dataset_dir, batch_size, thread_workers)
+  max_epochs = proc_flags['max_epochs']
+  
+  for epoch in range(current_epochs, max_epochs):
+    sampler.set_epoch(epoch)
+    compute(logger, model, device, dist_train_loader, optimizer, loss_op, epoch, is_train=True)
 
-  # get data loader
+    # NOTE: controversal, only saving ckpt in rank 0, first machine, only first process.
+    # assuming the ckpt dir is a nfs mounted for each machine
+    if rank == 0:
+      save_ckpt(logger, epoch+1, model, optimizer, ckpt_dir)
 
 
 if __name__ == "__main__":
