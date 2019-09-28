@@ -17,3 +17,5 @@ wikitext/
 wikitext/**
 downloads
 tmp/**
+*.bak*
+*.sh

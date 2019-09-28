@@ -207,7 +207,7 @@ def kill_process_safe(pid,
 _RUNS_PER_SET = 1
 _START = 1
 _RUN_NVPROF = False
-_PROF_ONLY = True
+_PROF_ONLY = False 
 
 def run(
     batch_size,

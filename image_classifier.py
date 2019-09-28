@@ -6,8 +6,8 @@ import torchvision.datasets as predefined_datasets
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 from image_models.model import EfficientNet
-from image_models.factory import models_factory
 from image_models.utils import save_ckpt
+import image_models.factory as model_factory
 
 import torch
 import torch.optim as optim
@@ -123,20 +123,14 @@ def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, is_tr
 def main(argv):
   del argv
   
-  logger = U.get_logger(__name__+FLAGS.run_name)
-  logger.info("run: %s, specified model: %s, dataset: %s", FLAGS.run_name, FLAGS.model, FLAGS.dataset)
-  _cudart = U.get_cudart()
-  if _cudart is None:
-    logger.warning("No cudart, probably means you do not have cuda on this machine.")
-
   # distributed init:
   if FLAGS.dist_backend is not None:
-    distributed_main(logger, _cudart)
+    distributed_main()
   else:
-    single_main(logger, _cudart)
+    single_main()
 
 
-def distributed_main(logger, _cudart):
+def distributed_main():
   # NOTE: see flags discover gpu
   if FLAGS.discover_gpus:
     ngpus_per_node = torch.cuda.device_count()
@@ -146,10 +140,17 @@ def distributed_main(logger, _cudart):
   # NOTE: we are using ngpus nprocess per node
   # hence we need to adjust the world size to be the following
   world_size = ngpus_per_node * FLAGS.world_size
-  mlproc.spawn(worker, nprocs=ngpus_per_node, args=(logger, ngpus_per_node, FLAGS))
+  proc_flags = FLAGS.flag_values_dict()
+  mlproc.spawn(worker, nprocs=ngpus_per_node, args=(ngpus_per_node, world_size, proc_flags))
 
-def single_main(logger, _cudart):
-  
+def single_main():
+  logger = U.get_logger(__name__+FLAGS.run_name)
+  logger.info("run: %s, specified model: %s, dataset: %s", FLAGS.run_name, FLAGS.model, FLAGS.dataset)
+  _cudart = U.get_cudart()
+  if _cudart is None:
+    logger.warning("No cudart, probably means you do not have cuda on this machine.")
+
+
   if not FLAGS.profile_only:
     device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
   else:
@@ -158,7 +159,7 @@ def single_main(logger, _cudart):
   dataset_fn = datasets_factory[FLAGS.dataset]
   dataset_classes = datasets_sizes[FLAGS.dataset]
   have_ckpt = (FLAGS.ckpt_dir is not None and any("model_state_epoch" in x for x in os.listdir(FLAGS.ckpt_dir)))
-  model = models_factory.get_model(FLAGS.model, FLAGS.dataset, dataset_classes)
+  model = model_factory.get_model(FLAGS.model, FLAGS.dataset, dataset_classes)
   optimizer = optim.Adam(model.parameters(), lr=0.001)
 
   if have_ckpt:
@@ -225,8 +226,15 @@ def single_main(logger, _cudart):
     final_time = time.time() - start_time
     logger.info("Finished: ran for %d secs", final_time)
     
-def worker(gpu_index, logger, ngpus_per_node, flags):
-  logger.info("Using GPU: %d for training", gpu_index)
+def worker(gpu_index, ngpus_per_nodei, world_size, proc_flags):
+  logger = U.get_logger(__name__+proc_flags['run_name'])
+  logger.info("run: %s, specified model: %s, dataset: %s", proc_flags['run_name'], proc_flags['model'], proc_flags['dataset'])
+  _cudart = U.get_cudart()
+  if _cudart is None:
+    logger.warning("No cudart, probably means you do not have cuda on this machine.")
+
+ 
+  logger.info("Using GPU: %d for training, total world size: %d", gpu_index, world_size)
 
 if __name__ == "__main__":
   app.run(main)

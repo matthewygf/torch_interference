@@ -4,6 +4,9 @@ from image_models.DPN import *
 from image_models.pyramidnet import *
 import torchvision.models as models
 
+def resnet_wide_18_2(pretrained=False, **kwargs):
+  return models.ResNet(Bottleneck, [2,2,2,2], width_per_group=64 * 2, **kwargs)
+
 
 models_factory = {
   'googlenet': models.googlenet,
@@ -96,9 +99,6 @@ class Bottleneck(nn.Module):
         out = self.relu(out)
 
         return out
-
-def resnet_wide_18_2(pretrained=False, **kwargs):
-  return models.ResNet(Bottleneck, [2,2,2,2], width_per_group=64 * 2, **kwargs)
 
 
 def get_model(model_name, dataset_name, dataset_classes):
