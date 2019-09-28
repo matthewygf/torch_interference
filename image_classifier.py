@@ -2,14 +2,12 @@ import os
 from absl import app
 from absl import flags
 # using predefined set of models
-import torchvision.models as models
 import torchvision.datasets as predefined_datasets
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 from image_models.model import EfficientNet
-from image_models.resnext import *
-from image_models.DPN import *
-from image_models.pyramidnet import *
+from image_models.factory import models_factory
+from image_models.utils import save_ckpt
 
 import torch
 import torch.optim as optim
@@ -21,18 +19,18 @@ import utils as U
 import ops_profiler.flop_counter as counter
 import ops_profiler.flop_counter_v2 as counter_v2
 
+# distributed
+import torch.distributed as dist
+import torch.multiprocessing as mlproc
+
 import signal
 import sys
 from functools import partial
 
+# NOTE: always be deterministic, but means slower in CUDNN.
 torch.manual_seed(0)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
-
-"""
-  NOTE: Only using 1 GPU
-  TODO: 4 GPUs job packing
-"""
 
 FLAGS = flags.FLAGS
 
@@ -48,102 +46,19 @@ flags.DEFINE_bool('profile_only', False, 'profile model FLOPs and Params only, n
 flags.DEFINE_bool('profile_usev2', False, 'profile model FLOPs and Params using another ver., not running the training procedure')
 flags.DEFINE_string('ckpt_dir', None, 'directory to save ckpt')
 
+# distributed settings
+# NOTE: We use N PROCESS N GPUS distributed method, because its the fastest for pytorch.
+flags.DEFINE_integer('num_gpus', 1, "Number of gpus to use within each rank.")
+flags.DEFINE_boolean('discover_gpus', False, "if set to true, then will use torch cuda device_count to override num_gpus")
+flags.DEFINE_integer('rank', 0, "distributed rank , which machine you are. start with 0.")
+flags.DEFINE_string("dist_backend", None, "Which distributed backend to use, if defined, then will initialize distribute process group.")
+#https://pytorch.org/tutorials/beginner/aws_distributed_training_tutorial.html
+flags.DEFINE_string("dist_method", None, "Which distributed method to use. e.g. starts with file://path/to/file, env://, tcp://IP:PORT. ")
+flags.DEFINE_integer("world_size", 1, "Number of distributed process. e.g. machines.")
+
 flags.mark_flag_as_required('run_name')
 flags.mark_flag_as_required('model')
 flags.mark_flag_as_required('dataset_dir')
-
-def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
-    """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=dilation, groups=groups, bias=False, dilation=dilation)
-
-
-def conv1x1(in_planes, out_planes, stride=1):
-    """1x1 convolution"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
-
-
-class Bottleneck(nn.Module):
-    expansion = 4
-
-    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
-                 base_width=64, dilation=1, norm_layer=None):
-        super(Bottleneck, self).__init__()
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
-        width = int(planes * (base_width / 64.)) * groups
-        # Both self.conv2 and self.downsample layers downsample the input when stride != 1
-        self.conv1 = conv1x1(inplanes, width)
-        self.bn1 = norm_layer(width)
-        self.conv2 = conv3x3(width, width, stride, groups, dilation)
-        self.bn2 = norm_layer(width)
-        self.conv3 = conv1x1(width, planes * self.expansion)
-        self.bn3 = norm_layer(planes * self.expansion)
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
-        self.stride = stride
-
-    def forward(self, x):
-        identity = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
-
-        out = self.conv3(out)
-        out = self.bn3(out)
-
-        if self.downsample is not None:
-            identity = self.downsample(x)
-
-        out += identity
-        out = self.relu(out)
-
-        return out
-
-def resnet_wide_18_2(pretrained=False, **kwargs):
-  return models.ResNet(Bottleneck, [2,2,2,2], width_per_group=64 * 2, **kwargs)
-
-models_factory = {
-  'googlenet': models.googlenet,
-  'squeezenet1_0': models.squeezenet1_0,
-  'mobilenet': models.mobilenet_v2,
-  'mobilenet_large': models.mobilenet_v2,
-  'shufflenetv2_0_5': models.shufflenet_v2_x0_5,
-  'shufflenetv2_1_0': models.shufflenet_v2_x1_0,
-  'shufflenetv2_2_0': models.shufflenet_v2_x2_0,
-  'resnext11_2x16d': ResNext11_2x16d,
-  'resnext20_2x16d': ResNext20_2x16d,
-  'resnext20_2x32d': ResNext20_2x32d,
-  'resnext11_2x64d': ResNext11_2x64d,
-  'resnext29_2x64d': ResNeXt29_2x64d,
-  'resnet18': models.resnet18,
-  'resnet34': models.resnet34,
-  'resnet50': models.resnet50,
-  'densenet121': models.densenet121,
-  'densenet161': models.densenet161,
-  'densenet169': models.densenet169,
-  'densenet40': models.DenseNet,
-  'vgg11': models.vgg11,
-  'vgg11_bn': models.vgg11_bn,
-  'vgg19': models.vgg19,
-  # new
-  'mnasnet0_5': models.mnasnet0_5,
-  'mnasnet1_0': models.mnasnet1_0,
-  'mnasnet1_3': models.mnasnet1_3,
-  'dpn92': DPN92,
-  'dpn26': DPN26,
-  'dpn26_small': DPN26_small,
-  'pyramidnet_48_110': pyramidnet_48_110,
-  'pyramidnet_84_66': pyramidnet_84_66,
-  'pyramidnet_84_110': pyramidnet_84_110,
-  'pyramidnet_270_110_bottleneck': pyramidnet_270_110_bottleneck,
-  'resnet_wide_18_2': resnet_wide_18_2
-}
 
 datasets_factory = {
   'cifar10': predefined_datasets.CIFAR10,
@@ -162,16 +77,9 @@ datasets_sizes = {
   'imagenet': 1000
 }
 
-def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, is_train=True):
-  if is_train:
-    model.train()
-  else:
-    logger.info("Eval Starts")
-    model.eval()
-
-  mode = 'train' if is_train else 'eval' 
+def _compute(device, dataloader, is_train, model, optimizer, loss_op, logger, epoch=None):
   epoch_start = time.time()
-  for batch_idx, (data, target) in enumerate(loader):
+  for batch_idx, (data, target) in enumerate(dataloader):
     data, target = data.to(device), target.to(device)
     if is_train:
       optimizer.zero_grad()
@@ -186,14 +94,14 @@ def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, is_tr
       if batch_idx == 0:
         logger.info("First step of this epoch: %s", str(datetime.datetime.utcnow()))
       
-      if batch_idx == len(loader) - 1:
+      if batch_idx == len(dataloader) - 1:
         epoch_elapsed = time.time() - epoch_start
         logger.info("Last step of this epoch: %s, ran for %.4f", str(datetime.datetime.utcnow()), epoch_elapsed)
 
       if batch_idx % FLAGS.log_interval == 0:
         logger.info("Epoch %d: %d/%d [Loss: %.4f] (%.4f sec/step)", 
                     epoch, batch_idx*len(data), 
-                    len(loader.dataset), loss.item(), time_elapsed)
+                    len(dataloader.dataset), loss.item(), time_elapsed)
     else:
       if batch_idx % FLAGS.log_interval == 0 :
         _, predicted = torch.max(pred.data, 1)
@@ -202,11 +110,15 @@ def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, is_tr
         logger.info("[acc: %.4f] (%.4f sec/step)", acc/b_size , time_elapsed)
 
 
-def save_ckpt(logger, epoch, model, optimizer):
-  logger.info("saving ckpt: %d", epoch)
-  states = {'epoch': epoch, 'model_state_dict': model.state_dict(), 'optim_state_dict': optimizer.state_dict()}
-  ckpt_path = os.path.join(FLAGS.ckpt_dir, 'model_state_epoch.pth')
-  torch.save(states, ckpt_path)
+def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, is_train=True):
+  if is_train:
+    model.train()
+    _compute(device, loader, is_train, model, optimizer, loss_op, logger, epoch)
+  else:
+    logger.info("Eval Starts")
+    model.eval()
+    with torch.no_grad():
+      _compute(device, loader, is_train, model, optimizer, loss_op, logger, epoch)
 
 def main(argv):
   del argv
@@ -216,41 +128,37 @@ def main(argv):
   _cudart = U.get_cudart()
   if _cudart is None:
     logger.warning("No cudart, probably means you do not have cuda on this machine.")
+
+  # distributed init:
+  if FLAGS.dist_backend is not None:
+    distributed_main(logger, _cudart)
+  else:
+    single_main(logger, _cudart)
+
+
+def distributed_main(logger, _cudart):
+  # NOTE: see flags discover gpu
+  if FLAGS.discover_gpus:
+    ngpus_per_node = torch.cuda.device_count()
+  else:
+    ngpus_per_node = FLAGS.num_gpus
+
+  # NOTE: we are using ngpus nprocess per node
+  # hence we need to adjust the world size to be the following
+  world_size = ngpus_per_node * FLAGS.world_size
+  mlproc.spawn(worker, nprocs=ngpus_per_node, args=(logger, ngpus_per_node, FLAGS))
+
+def single_main(logger, _cudart):
+  
   if not FLAGS.profile_only:
     device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
   else:
     device = torch.device("cpu")
 
-  model_fn = models_factory[FLAGS.model]
   dataset_fn = datasets_factory[FLAGS.dataset]
   dataset_classes = datasets_sizes[FLAGS.dataset]
-  
   have_ckpt = (FLAGS.ckpt_dir is not None and any("model_state_epoch" in x for x in os.listdir(FLAGS.ckpt_dir)))
-  
-  # TODO: use a Dict and update.
-  if 'google' in FLAGS.model: 
-    model = model_fn(pretrained=False, transform_input=False, aux_logits=False, num_classes=dataset_classes)
-  elif 'mobilenet_large' in FLAGS.model:
-    inverted_residual_setting = [
-        # t, c, n, s
-        [1, 16, 1, 1],
-        [6, 32, 2, 2],
-        [6, 64, 3, 2],
-        [6, 96, 4, 2],
-        [6, 128, 4, 1],
-        [6, 256, 2, 2],
-        [6, 512, 2, 1],
-    ]
-    model = model_fn(pretrained=False, num_classes=dataset_classes, inverted_residual_setting=inverted_residual_setting)
-  elif 'efficientnet' in FLAGS.model and 'v2' not in FLAGS.model:
-    model = model_fn(FLAGS.model, {'num_classes': dataset_classes})
-  elif 'densenet40' in FLAGS.model:
-    model = model_fn(num_classes=dataset_classes, growth_rate=12, num_init_features=16, block_config=(12,12,12))
-  elif 'pyramid' in FLAGS.model:
-    model = model_fn(dataset=FLAGS.dataset, num_classes=dataset_classes)
-  else:
-    model = model_fn(pretrained=False, num_classes=dataset_classes)
-  
+  model = models_factory.get_model(FLAGS.model, FLAGS.dataset, dataset_classes)
   optimizer = optim.Adam(model.parameters(), lr=0.001)
 
   if have_ckpt:
@@ -305,8 +213,7 @@ def main(argv):
         status = None
       for epoch in range(current_epochs, FLAGS.max_epochs+1):
         compute(logger, model, device, train_loader, optimizer, loss_op, epoch=epoch, is_train=True)
-        # TODO: OOM when in eval mode, need to set torch.nograd:
-        # NOTE: currently just ckpt every epoch
+        # TODO: currently just ckpt every epoch
         # plus 1 because next time around is inclusive.
         if FLAGS.ckpt_dir is not None:
           save_ckpt(logger, epoch+1, model, optimizer)
@@ -318,6 +225,9 @@ def main(argv):
     final_time = time.time() - start_time
     logger.info("Finished: ran for %d secs", final_time)
     
+def worker(gpu_index, logger, ngpus_per_node, flags):
+  logger.info("Using GPU: %d for training", gpu_index)
+
 if __name__ == "__main__":
   app.run(main)
 

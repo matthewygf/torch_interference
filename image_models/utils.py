@@ -11,8 +11,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.utils import model_zoo
-
-
+import os
 ########################################################################
 ############### HELPERS FUNCTIONS FOR MODEL ARCHITECTURE ###############
 ########################################################################
@@ -95,6 +94,14 @@ class Conv2dSamePadding(nn.Conv2d):
     def forward(self, x):
         x = self.pad2d(x, self.weight)
         return F.conv2d(x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups)
+
+
+
+def save_ckpt(logger, epoch, model, optimizer, ckpt_dir):
+  logger.info("saving ckpt: %d", epoch)
+  states = {'epoch': epoch, 'model_state_dict': model.state_dict(), 'optim_state_dict': optimizer.state_dict()}
+  ckpt_path = os.path.join(ckpt_dir, 'model_state_epoch.pth')
+  torch.save(states, ckpt_path)
 
 
 ########################################################################

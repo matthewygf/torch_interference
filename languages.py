@@ -207,7 +207,8 @@ def main(argv):
       top_ids = np.argmax(pred_logits, axis=-1)
       print([model.vocab.get_token_from_index(i, out_feature_key) for i in top_ids])
     else:
-      print(pred_logits)
+      pred_logits["predictions"] = np.asarray(pred_logits["predictions"])
+      logger.info(pred_logits)
 
   final_time = time.time() - start_time
   logger.info("Finished application: ran for %d secs", final_time)
