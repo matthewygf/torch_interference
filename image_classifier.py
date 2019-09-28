@@ -54,7 +54,7 @@ flags.DEFINE_string("dist_backend", None, "Which distributed backend to use, if 
 #https://pytorch.org/tutorials/beginner/aws_distributed_training_tutorial.html
 flags.DEFINE_string("dist_method", None, "Which distributed method to use. e.g. starts with file://path/to/file, env://, tcp://IP:PORT. ")
 flags.DEFINE_integer("world_size", 1, "Number of distributed process. e.g. machines.")
-flags.DEFINTE_integer('thread_workers', 2, 'Number of threads for data loader')
+flags.DEFINE_integer('thread_workers', 2, 'Number of threads for data loader')
 
 flags.mark_flag_as_required('run_name')
 flags.mark_flag_as_required('model')
@@ -77,7 +77,7 @@ datasets_sizes = {
   'imagenet': 1000
 }
 
-def _compute(device, dataloader, is_train, model, optimizer, loss_op, logger, epoch=None, non_blocking=False):
+def _compute(device, dataloader, is_train, model, optimizer, loss_op, logger, epoch=None, log_interval=10, non_blocking=False):
   epoch_start = time.time()
   for batch_idx, (data, target) in enumerate(dataloader):
     data, target = data.to(device, non_blocking=non_blocking), target.to(device, non_blocking=non_blocking)
@@ -98,27 +98,27 @@ def _compute(device, dataloader, is_train, model, optimizer, loss_op, logger, ep
         epoch_elapsed = time.time() - epoch_start
         logger.info("Last step of this epoch: %s, ran for %.4f", str(datetime.datetime.utcnow()), epoch_elapsed)
 
-      if batch_idx % FLAGS.log_interval == 0:
+      if batch_idx % log_interval == 0:
         logger.info("Epoch %d: %d/%d [Loss: %.4f] (%.4f sec/step)", 
                     epoch, batch_idx*len(data), 
                     len(dataloader.dataset), loss.item(), time_elapsed)
     else:
-      if batch_idx % FLAGS.log_interval == 0 :
+      if batch_idx % log_interval == 0 :
         _, predicted = torch.max(pred.data, 1)
         b_size = target.size(0)
         acc = (predicted == target).sum().item()
         logger.info("[acc: %.4f] (%.4f sec/step)", acc/b_size , time_elapsed)
 
 
-def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, is_train=True):
+def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, log_interval=10, is_train=True):
   if is_train:
     model.train()
-    _compute(device, loader, is_train, model, optimizer, loss_op, logger, epoch)
+    _compute(device, loader, is_train, model, optimizer, loss_op, logger, log_interval, epoch)
   else:
     logger.info("Eval Starts")
     model.eval()
     with torch.no_grad():
-      _compute(device, loader, is_train, model, optimizer, loss_op, logger, epoch)
+      _compute(device, loader, is_train, model, optimizer, loss_op, logger, log_interval, epoch)
 
 def main(argv):
   del argv
@@ -238,9 +238,9 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   torch.cuda.set_device(gpu_index)
   model.cuda(gpu_index)
 
-  batch_size = int(proc_flags['batch_size']) / ngpus_per_node
+  batch_size = int(proc_flags['batch_size'] / ngpus_per_node)
   thread_workers = int((proc_flags['thread_workers'] + ngpus_per_node - 1) / ngpus_per_node )
-  logger.info("number of thread workers to use for data loader %d", thread_workers)
+  logger.info("****number of thread workers to use for data loader %d", thread_workers)
   # per process per distributed data parallel
   model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[gpu_index])
   loss_op = torch.nn.CrossEntropyLoss().cuda(gpu_index)
@@ -279,7 +279,7 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   
   for epoch in range(current_epochs, max_epochs):
     sampler.set_epoch(epoch)
-    compute(logger, model, device, dist_train_loader, optimizer, loss_op, epoch, is_train=True)
+    compute(logger, model, device, dist_train_loader, optimizer, loss_op, epoch, log_interval=proc_flags['log_interval'], is_train=True)
 
     # NOTE: controversal, only saving ckpt in rank 0, first machine, only first process.
     # assuming the ckpt dir is a nfs mounted for each machine
