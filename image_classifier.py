@@ -77,7 +77,7 @@ datasets_sizes = {
   'imagenet': 1000
 }
 
-def _compute(device, dataloader, is_train, model, optimizer, loss_op, logger, epoch=None, log_interval=10, non_blocking=False):
+def _compute(device, dataloader, is_train, model, optimizer, loss_op, logger, epoch=None, log_interval=10, non_blocking=False, rank=0):
   epoch_start = time.time()
   for batch_idx, (data, target) in enumerate(dataloader):
     data, target = data.to(device, non_blocking=non_blocking), target.to(device, non_blocking=non_blocking)
@@ -92,33 +92,33 @@ def _compute(device, dataloader, is_train, model, optimizer, loss_op, logger, ep
     time_elapsed = time.time() - start_time
     if epoch is not None:
       if batch_idx == 0:
-        logger.info("First step of this epoch: %s", str(datetime.datetime.utcnow()))
+        logger.info("Rank %d: First step of this epoch: %s", rank, str(datetime.datetime.utcnow()))
       
       if batch_idx == len(dataloader) - 1:
         epoch_elapsed = time.time() - epoch_start
-        logger.info("Last step of this epoch: %s, ran for %.4f", str(datetime.datetime.utcnow()), epoch_elapsed)
+        logger.info("Rank %d: Last step of this epoch: %s, ran for %.4f", rank, str(datetime.datetime.utcnow()), epoch_elapsed)
 
       if batch_idx % log_interval == 0:
-        logger.info("Epoch %d: %d/%d [Loss: %.4f] (%.4f sec/step)", 
-                    epoch, batch_idx*len(data), 
+        logger.info("Rank %d: Epoch %d: %d/%d [Loss: %.4f] (%.4f sec/step)", 
+                    rank, epoch, batch_idx*len(data), 
                     len(dataloader.dataset), loss.item(), time_elapsed)
     else:
       if batch_idx % log_interval == 0 :
         _, predicted = torch.max(pred.data, 1)
         b_size = target.size(0)
         acc = (predicted == target).sum().item()
-        logger.info("[acc: %.4f] (%.4f sec/step)", acc/b_size , time_elapsed)
+        logger.info("Rank %d: [acc: %.4f] (%.4f sec/step)", rank, acc/b_size , time_elapsed)
 
 
-def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, log_interval=10, is_train=True):
+def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, log_interval=10, is_train=True, rank=0):
   if is_train:
     model.train()
-    _compute(device, loader, is_train, model, optimizer, loss_op, logger, log_interval, epoch)
+    _compute(device, loader, is_train, model, optimizer, loss_op, logger, epoch, log_interval, rank=rank)
   else:
     logger.info("Eval Starts")
     model.eval()
     with torch.no_grad():
-      _compute(device, loader, is_train, model, optimizer, loss_op, logger, log_interval, epoch)
+      _compute(device, loader, is_train, model, optimizer, loss_op, logger, epoch, log_interval, rank=rank)
 
 def main(argv):
   del argv
@@ -271,6 +271,7 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   else:
     logger.info("No ckpt found")
     current_epochs = 1
+  logger.info("****Rank %d: starting epoch at %d", rank, current_epochs)
 
   torch.backends.cudnn.deterministic = True
   dataset_dir = proc_flags['dataset_dir']
@@ -279,7 +280,7 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   
   for epoch in range(current_epochs, max_epochs):
     sampler.set_epoch(epoch)
-    compute(logger, model, device, dist_train_loader, optimizer, loss_op, epoch, log_interval=proc_flags['log_interval'], is_train=True)
+    compute(logger, model, device, dist_train_loader, optimizer, loss_op, epoch, log_interval=proc_flags['log_interval'], is_train=True, rank=rank)
 
     # NOTE: controversal, only saving ckpt in rank 0, first machine, only first process.
     # assuming the ckpt dir is a nfs mounted for each machine
