@@ -98,6 +98,8 @@ class Conv2dSamePadding(nn.Conv2d):
 
 
 def save_ckpt(logger, epoch, model, optimizer, ckpt_dir):
+  if ckpt_dir is None:
+    return
   logger.info("saving ckpt: %d", epoch)
   states = {'epoch': epoch, 'model_state_dict': model.state_dict(), 'optim_state_dict': optimizer.state_dict()}
   ckpt_path = os.path.join(ckpt_dir, 'model_state_epoch.pth')

@@ -44,7 +44,7 @@ flags.DEFINE_integer('max_epochs', 5, 'maximum number of epochs to run')
 flags.DEFINE_bool('profile_only', False, 'profile model FLOPs and Params only, not running the training procedure')
 flags.DEFINE_bool('profile_usev2', False, 'profile model FLOPs and Params using another ver., not running the training procedure')
 flags.DEFINE_string('ckpt_dir', None, 'directory to save ckpt')
-
+flags.DEFINE_bool('add_random_transforms', False, 'whether to add horizontal flip and vertical flip')
 # distributed settings
 # NOTE: We use N PROCESS N GPUS distributed method, because its the fastest for pytorch.
 flags.DEFINE_integer('num_gpus', 1, "Number of gpus to use within each rank.")
@@ -113,6 +113,7 @@ def _compute(device, dataloader, is_train, model, optimizer, loss_op, logger, ep
 def compute(logger, model, device, loader, optimizer, loss_op, epoch=None, log_interval=10, is_train=True, rank=0):
   if is_train:
     model.train()
+    logger.info("Rank %d: training starts", rank)
     _compute(device, loader, is_train, model, optimizer, loss_op, logger, epoch, log_interval, rank=rank)
   else:
     logger.info("Eval Starts")
@@ -200,7 +201,7 @@ def single_main():
     else:
       status = None
     for epoch in range(current_epochs, FLAGS.max_epochs+1):
-      compute(logger, model, device, train_loader, optimizer, loss_op, epoch=epoch, is_train=True)
+      compute(logger, model, device, train_loader, optimizer, loss_op, epoch=epoch, is_train=True, rank=0)
       # TODO: currently just ckpt every epoch
       # plus 1 because next time around is inclusive.
       if FLAGS.ckpt_dir is not None:
@@ -239,7 +240,7 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   model.cuda(gpu_index)
 
   batch_size = int(proc_flags['batch_size'] / ngpus_per_node)
-  thread_workers = int((proc_flags['thread_workers'] + ngpus_per_node - 1) / ngpus_per_node )
+  thread_workers = proc_flags['thread_workers']
   logger.info("****number of thread workers to use for data loader %d", thread_workers)
   # per process per distributed data parallel
   model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[gpu_index])
@@ -280,7 +281,7 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   
   for epoch in range(current_epochs, max_epochs):
     sampler.set_epoch(epoch)
-    compute(logger, model, device, dist_train_loader, optimizer, loss_op, epoch, log_interval=proc_flags['log_interval'], is_train=True, rank=rank)
+    compute(logger, model, device, dist_train_loader, optimizer, loss_op, epoch=epoch, log_interval=proc_flags['log_interval'], is_train=True, rank=rank)
 
     # NOTE: controversal, only saving ckpt in rank 0, first machine, only first process.
     # assuming the ckpt dir is a nfs mounted for each machine
