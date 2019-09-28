@@ -226,15 +226,36 @@ def single_main():
     final_time = time.time() - start_time
     logger.info("Finished: ran for %d secs", final_time)
     
-def worker(gpu_index, ngpus_per_nodei, world_size, proc_flags):
+def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
+  # NOTE: this is assumed to be in distributed GPUs
   logger = U.get_logger(__name__+proc_flags['run_name'])
   logger.info("run: %s, specified model: %s, dataset: %s", proc_flags['run_name'], proc_flags['model'], proc_flags['dataset'])
   _cudart = U.get_cudart()
   if _cudart is None:
     logger.warning("No cudart, probably means you do not have cuda on this machine.")
-
  
-  logger.info("Using GPU: %d for training, total world size: %d", gpu_index, world_size)
+  # at this point, rank is just machine rank.
+  rank = proc_flags['rank']
+  if world_size > 1:
+    # NOTE: however here, we need to convert rank to beglobal rank among processes
+    # machine * gpus per node + our current gpu index
+    # see https://github.com/pytorch/examples/blob/master/imagenet/main.py
+    rank = rank * ngpus_per_node + gpu_index
+  
+  logger.info("Rank %d: using GPU: %d for training, total world size: %d, dist method: %s", rank, gpu_index, world_size, proc_flags['dist_method'])
+  
+  dist.init_process_group(backend=proc_flags['dist_backend'], init_method=proc_flags['dist_method'], world_size=world_size, rank=rank)
+
+  dataset_fn = datasets_factory[proc_flags['dataset']]
+  dataset_classes = datasets_sizes[proc_flags['dataset']]
+  model = model_factory.get_model(proc_flags['model'], proc_flags['dataset'], dataset_classes)
+  
+  # Set cuda to a single gpu context  
+  torch.cuda.set_device(gpu_index)
+  model.cuda(gpu_index)
+
+
+
 
 if __name__ == "__main__":
   app.run(main)
