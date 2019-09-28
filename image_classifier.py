@@ -3,11 +3,11 @@ from absl import app
 from absl import flags
 # using predefined set of models
 import torchvision.datasets as predefined_datasets
-from torchvision import transforms
-from torch.utils.data import Dataset, DataLoader
 from image_models.model import EfficientNet
 from image_models.utils import save_ckpt
 import image_models.factory as model_factory
+import train_utils.data as data_utils
+import train_utils.distribute as distribute_utils
 
 import torch
 import torch.optim as optim
@@ -55,6 +55,7 @@ flags.DEFINE_string("dist_backend", None, "Which distributed backend to use, if 
 #https://pytorch.org/tutorials/beginner/aws_distributed_training_tutorial.html
 flags.DEFINE_string("dist_method", None, "Which distributed method to use. e.g. starts with file://path/to/file, env://, tcp://IP:PORT. ")
 flags.DEFINE_integer("world_size", 1, "Number of distributed process. e.g. machines.")
+flags.DEFINTE_integer('thread_workers', 2, 'Number of threads for data loader')
 
 flags.mark_flag_as_required('run_name')
 flags.mark_flag_as_required('model')
@@ -150,7 +151,6 @@ def single_main():
   if _cudart is None:
     logger.warning("No cudart, probably means you do not have cuda on this machine.")
 
-
   if not FLAGS.profile_only:
     device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
   else:
@@ -188,43 +188,31 @@ def single_main():
     stats = counter.profile(model, input_size=(FLAGS.batch_size,) + (datasets_shape[FLAGS.dataset]), logger=logger, is_cnn=True)
     logger.info("DNN_Features: %s", str(stats))
     print("DNN_Features: ", str(stats))
-  else:
-    compose_trans = transforms.Compose([
-      transforms.ToTensor()
-    ])
-    train_dataset = dataset_fn(FLAGS.dataset_dir, transform=compose_trans, train=True, download=True)
-    val_dataset = dataset_fn(FLAGS.dataset_dir, transform=compose_trans, train=False, download=True)
+    return
 
-    train_loader = DataLoader(train_dataset, 
-                              batch_size=FLAGS.batch_size, 
-                              shuffle=True, 
-                              num_workers=2)
-    val_loader = DataLoader(val_dataset, 
-                            batch_size=FLAGS.batch_size, 
-                            shuffle=False, 
-                            num_workers=2)
-    
-    loss_op = torch.nn.CrossEntropyLoss()
-    start_time = time.time()
+  train_loader, val_lodaer = data_utils.get_standard_dataloader(dataset_fn, FLAGS.dataset_dir, FLAGS.batch_size)
+  
+  loss_op = torch.nn.CrossEntropyLoss()
+  start_time = time.time()
 
-    try:
-      if _cudart is not None:
-        status = _cudart.cudaProfilerStart()
-      else:
-        status = None
-      for epoch in range(current_epochs, FLAGS.max_epochs+1):
-        compute(logger, model, device, train_loader, optimizer, loss_op, epoch=epoch, is_train=True)
-        # TODO: currently just ckpt every epoch
-        # plus 1 because next time around is inclusive.
-        if FLAGS.ckpt_dir is not None:
-          save_ckpt(logger, epoch+1, model, optimizer)
+  try:
+    if _cudart is not None:
+      status = _cudart.cudaProfilerStart()
+    else:
+      status = None
+    for epoch in range(current_epochs, FLAGS.max_epochs+1):
+      compute(logger, model, device, train_loader, optimizer, loss_op, epoch=epoch, is_train=True)
+      # TODO: currently just ckpt every epoch
+      # plus 1 because next time around is inclusive.
+      if FLAGS.ckpt_dir is not None:
+        save_ckpt(logger, epoch+1, model, optimizer)
 
-    finally:
-      if status == 0:
-        _cudart.cudaProfilerStop()
+  finally:
+    if status == 0:
+      _cudart.cudaProfilerStop()
 
-    final_time = time.time() - start_time
-    logger.info("Finished: ran for %d secs", final_time)
+  final_time = time.time() - start_time
+  logger.info("Finished: ran for %d secs", final_time)
     
 def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   # NOTE: this is assumed to be in distributed GPUs
@@ -254,7 +242,43 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   torch.cuda.set_device(gpu_index)
   model.cuda(gpu_index)
 
+  batch_size = int(proc_flags['batch_size']) / ngpus_per_node
+  thread_workers = int((proc_flags['thread_workers'] + ngpus_per_node - 1) / ngpus_per_node )
+  logger.info("number of thread workers to use for data loader %d", thread_workers)
+  # per process per distributed data parallel
+  model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[gpu_index])
+  loss_op = torch.nn.CrossEntropyLoss().cuda(gpu_index)
+  optimizer = optim.Adam(model.parameters(), 0.001)
 
+  # load ckpt if ckpt exists.
+  ckpt_dir = proc_flags['ckpt_dir']
+  have_ckpt = (ckpt_dir is not None and any("model_state_epoch" in x for x in os.listdir(ckpt_dir)))
+
+  if have_ckpt:
+    files = os.listdir(ckpt_dir)
+    model_checkpoints = [x for x in files if "model_state_epoch" in x]
+    logger.info("**********Found ckpt: %s" % model_checkpoints[-1])
+    # TODO: found the epoch ckpt, for now we just keep one.
+    ckpt_path = os.path.join(FLAGS.ckpt_dir, model_checkpoints[-1])
+    # NOTE: map model to be loaded to specified single GPU
+    location = "cuda:%d" % gpu_index
+    ckpt = torch.load(ckpt_path, map_location=location)
+    current_epochs = ckpt['epoch']
+    model.load_state_dict(ckpt['model_state_dict'])
+    optimizer.load_state_dict(ckpt['optim_state_dict'])
+    # Move to device. 
+    # for state in optimizer.state.values():
+    #   for k, v in state.items():
+    #     if isinstance(v, torch.Tensor):
+    #       state[k] = v.to(device)
+    logger.info("******Loaded ckpt")
+  else:
+    logger.info("No ckpt found")
+    current_epochs = 1
+
+  torch.backends.cudnn.deterministic = True
+
+  # get data loader
 
 
 if __name__ == "__main__":
