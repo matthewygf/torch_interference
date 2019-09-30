@@ -24,6 +24,7 @@ from allennlp.training.checkpointer import Checkpointer
 from languages_data import pos_data_reader, embeddings_factory, iterators_factory, datasets_factory, preprocessing_factory
 from language_models import models_factory, datareader_cfg_factory
 from languages_predictors import predictors_factory
+
 from ops_profiler.flop_counter import *
 
 import time
@@ -64,7 +65,19 @@ flags.DEFINE_integer('max_sentence_length', 200, 'maxium length per sentence for
 flags.DEFINE_bool('profile_only', False, 'Profile the model and exit.')
 flags.DEFINE_string('ckpt_dir', '/tmp/ckpt', 'the directory to load and save ckpt')
 
-#TODO: DATA PARALLEL / MODEL PARALLEL
+
+
+#TODO: MODEL PARALLEL
+# distributed settings
+# NOTE: We use N PROCESS N GPUS distributed method, because its the fastest for pytorch.
+flags.DEFINE_integer('num_gpus', 1, "Number of gpus to use within each rank.")
+flags.DEFINE_boolean('discover_gpus', False, "if set to true, then will use torch cuda device_count to override num_gpus")
+flags.DEFINE_integer('rank', 0, "distributed rank , which machine you are. start with 0.")
+flags.DEFINE_string("dist_backend", None, "Which distributed backend to use, if defined, then will initialize distribute process group.")
+#https://pytorch.org/tutorials/beginner/aws_distributed_training_tutorial.html
+flags.DEFINE_string("dist_method", None, "Which distributed method to use. e.g. starts with file://path/to/file, env://, tcp://IP:PORT. ")
+flags.DEFINE_integer("world_size", 1, "Number of distributed process. e.g. machines.")
+
 
 flags.mark_flag_as_required('run_name')
 flags.mark_flag_as_required('model')
@@ -97,10 +110,7 @@ def main(argv):
 
   logger = U.get_logger(__name__+FLAGS.run_name)
   logger.info("run: %s, specified model: %s, dataset: %s", FLAGS.run_name, FLAGS.model, FLAGS.dataset)
-  _cudart = U.get_cudart()
-  device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
-  if _cudart is None:
-    logger.warning("No cudart, probably means you do not have cuda on this machine.")
+  
 
   cfgs = datareader_cfg_factory.get_datareader_configs(FLAGS.dataset)
   if cfgs is not None:
@@ -127,11 +137,9 @@ def main(argv):
   
   vocab = Vocabulary.from_instances(
                 train_dataset + validation_dataset, max_vocab_size=FLAGS.max_vocabs)
-
-  #print(vocab.print_statistics())
-
   embeddings = embeddings_factory.get_embeddings(FLAGS.embeddings, vocab, embedding_dim=FLAGS.embeddings_dim)
-
+  iterator = iterators_factory.get_iterator(FLAGS.dataset, FLAGS.batch_size)
+  iterator.index_with(vocab)
   models_args = {
     'model_name': FLAGS.model,
     'embeddings': embeddings,
@@ -152,13 +160,19 @@ def main(argv):
     torch.save(model.state_dict(), FLAGS.run_name+"model.pth")
     return
 
-  model = model.to(device)
-
   optimizer = optimizers_factory[FLAGS.optimizer](model.parameters(), lr=0.001)
 
-  iterator = iterators_factory.get_iterator(FLAGS.dataset, FLAGS.batch_size)
+  if FLAGS.dist_method != None:
+    print("boom")
+  else:
+    single_worker(logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset)
 
-  iterator.index_with(vocab)
+def single_worker(logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset):
+  _cudart = U.get_cudart()
+  device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
+  if _cudart is None:
+    logger.warning("No cudart, probably means you do not have cuda on this machine.")
+  model = model.to(device)
   cuda_device = 0 if FLAGS.use_cuda else -1 # TODO: multi GPU
   # NOTE: THIS CKPT Mechanism only ckpt at the end of every epoch.
   # if an epoch is more than 1 day, then you take care of it yourself :P
@@ -185,11 +199,14 @@ def main(argv):
       _cudart.cudaProfilerStop()
   final_time = time.time() - start_time
   logger.info("Finished training: ran for %d secs", final_time)
+  final_output(FLAGS.flag_values_dict, model, device, logger, reader, out_feature_key, start_time)
 
+
+def final_output(program_flags, model, device, logger, reader, out_feature_key, start_time):
   # TODO: VERY ROUGH.
-  if FLAGS.task == 'lm':
+  if program_flags['task'] == 'lm':
     for _ in range(50):
-      bidir_state = 2*FLAGS.num_layers if FLAGS.bidirectional else FLAGS.num_layers
+      bidir_state = 2*program_flags['num_layers'] if program_flags['bidirectional'] else program_flags['num_layers']
       state = (torch.zeros(bidir_state, 1, FLAGS.hiddens_dim).to(device),
         torch.zeros(bidir_state, 1, FLAGS.hiddens_dim).to(device))
       tokens, _ = model.generate(device, state)
@@ -202,9 +219,9 @@ def main(argv):
     pred_logits = predictor.predict(test_tokens_or_sentence)
     pred_logits_key = predictors_factory.get_logits_key(FLAGS.task)
     if pred_logits_key is not None:
-     pred_logits = pred_logits[pred_logits_key]
+      pred_logits = pred_logits[pred_logits_key]
 
-    if FLAGS.task == 'pos':
+    if program_flags['task'] == 'pos':
       top_ids = np.argmax(pred_logits, axis=-1)
       print([model.vocab.get_token_from_index(i, out_feature_key) for i in top_ids])
     else:

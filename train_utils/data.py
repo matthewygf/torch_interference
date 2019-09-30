@@ -2,7 +2,6 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 import train_utils.distribute as distribute_utils
 
-
 def get_dataset(dataset_fn, dataset_dir):
   # TODO: currently this is the only transforms.
   compose_trans = transforms.Compose([

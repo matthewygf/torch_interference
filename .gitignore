@@ -19,3 +19,4 @@ downloads
 tmp/**
 *.bak*
 *.sh
+misc/**
