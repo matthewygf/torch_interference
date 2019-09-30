@@ -24,6 +24,10 @@ from allennlp.training.checkpointer import Checkpointer
 from languages_data import pos_data_reader, embeddings_factory, iterators_factory, datasets_factory, preprocessing_factory
 from language_models import models_factory, datareader_cfg_factory
 from languages_predictors import predictors_factory
+# distributed
+import torch.distributed as dist
+import torch.multiprocessing as mlproc
+from  train_utils.distributed_trainer import DistributeTrainer
 
 from ops_profiler.flop_counter import *
 
@@ -31,7 +35,7 @@ import time
 import utils as U
 import numpy as np
 import os
-
+import sys
 from urllib.parse import urlparse
 
 import copy
@@ -108,27 +112,40 @@ optimizers_factory = {
 def main(argv):
   del argv
 
-  logger = U.get_logger(__name__+FLAGS.run_name)
-  logger.info("run: %s, specified model: %s, dataset: %s", FLAGS.run_name, FLAGS.model, FLAGS.dataset)
   
-
-  cfgs = datareader_cfg_factory.get_datareader_configs(FLAGS.dataset)
-  if cfgs is not None:
-    if FLAGS.max_sentence_length > 0:
-      cfgs.update({'max_sentence_length': FLAGS.max_sentence_length})
-    reader = data_reader_factory[FLAGS.dataset](**cfgs)
+  program_flags = FLAGS.flag_values_dict()
+  if FLAGS.dist_method != None:
+    distribute_main(program_flags)
   else:
-    reader = data_reader_factory[FLAGS.dataset]()
+    logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset = pre_init(program_flags)
+    if program_flags['profile_only']:
+      # language
+      torch.save(model.state_dict(), program_flags['run_name']+"model.pth")
+      sys.exit(1)
 
-  dataset_paths = datasets_factory.get_dataset_paths(FLAGS.dataset)
+    single_worker(logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset)
+    
+def pre_init(program_flags, ngpus_per_node=None):
+  logger = U.get_logger(__name__+program_flags['run_name'])
+  logger.info("run: %s, specified model: %s, dataset: %s", program_flags['run_name'], program_flags['model'], program_flags['dataset'])
+  
+  cfgs = datareader_cfg_factory.get_datareader_configs(program_flags['dataset'])
+  if cfgs is not None:
+    if program_flags['max_sentence_length'] > 0:
+      cfgs.update({'max_sentence_length': program_flags['max_sentence_length']})
+    reader = data_reader_factory[program_flags['dataset']](**cfgs)
+  else:
+    reader = data_reader_factory[program_flags['dataset']]()
+
+  dataset_paths = datasets_factory.get_dataset_paths(program_flags['dataset'])
   # NOTE: check whether we need preprocessing, i.e. machine translation datasets
   train_dataset = None
   validation_dataset = None
   if dataset_paths['train']['preprocess']:
     # TODO: not yet ready. .___.
-    preprocessor = preprocessing_factory.get_preprocessor(FLAGS.dataset)
+    preprocessor = preprocessing_factory.get_preprocessor(program_flags['dataset'])
   
-  cache_dataset_dir = os.path.join(FLAGS.dataset_dir, FLAGS.dataset)
+  cache_dataset_dir = os.path.join(program_flags['dataset_dir'], program_flags['dataset'])
   # TODO: If there is multiple paths to make one huge dataset, we should do it with the preprocessor
   train_dataset = reader.read(cached_path(dataset_paths['train']['paths'][0], cache_dataset_dir))
   validation_dataset = None
@@ -136,38 +153,88 @@ def main(argv):
     validation_dataset = reader.read(cached_path(dataset_paths['val']['paths'][0], cache_dataset_dir))
   
   vocab = Vocabulary.from_instances(
-                train_dataset + validation_dataset, max_vocab_size=FLAGS.max_vocabs)
-  embeddings = embeddings_factory.get_embeddings(FLAGS.embeddings, vocab, embedding_dim=FLAGS.embeddings_dim)
-  iterator = iterators_factory.get_iterator(FLAGS.dataset, FLAGS.batch_size)
+                train_dataset + validation_dataset, max_vocab_size=program_flags['max_vocabs'])
+  embeddings = embeddings_factory.get_embeddings(program_flags['embeddings'], vocab, embedding_dim=program_flags['embeddings_dim'])
+  batch_size = int(program_flags['batch_size'] / ngpus_per_node) if ngpus_per_node is not None else program_flags['batch_size']
+  iterator = iterators_factory.get_iterator(program_flags['dataset'], batch_size)
   iterator.index_with(vocab)
   models_args = {
-    'model_name': FLAGS.model,
+    'model_name': program_flags['model'],
     'embeddings': embeddings,
     'vocab': vocab,
-    'input_dims': FLAGS.embeddings_dim,
-    'hidden_dims': FLAGS.hiddens_dim,
+    'input_dims': program_flags['embeddings_dim'],
+    'hidden_dims': program_flags['hiddens_dim'],
     'batch_first': True,
-    'dataset_name': FLAGS.dataset,
-    'dropout': FLAGS.drop_out,
-    'bidirectional': FLAGS.bidirectional,
-    'max_len': FLAGS.max_len,
-    'num_layers': FLAGS.num_layers
+    'dataset_name': program_flags['dataset'],
+    'dropout': program_flags['drop_out'],
+    'bidirectional': program_flags['bidirectional'],
+    'max_len': program_flags['max_len'],
+    'num_layers': program_flags['num_layers']
   }
 
   out_feature_key, model = models_factory.get_model_fn(**models_args)
-  if FLAGS.profile_only:
-    # language
-    torch.save(model.state_dict(), FLAGS.run_name+"model.pth")
-    return
 
-  optimizer = optimizers_factory[FLAGS.optimizer](model.parameters(), lr=0.001)
+  optimizer = optimizers_factory[program_flags['optimizer']](model.parameters(), lr=0.001)
+  return logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset
 
-  if FLAGS.dist_method != None:
-    print("boom")
+
+def distribute_main(program_flags):
+  if program_flags['discover_gpus']:
+    ngpus_per_node = torch.cuda.device_count()
   else:
-    single_worker(logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset)
+    ngpus_per_node = program_flags['num_gpus']
+  # NOTE: we are using ngpus nprocess per node
+  # hence we need to adjust the world size to be the following
+  world_size = ngpus_per_node * program_flags['world_size']
+  mlproc.spawn(distribute_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, world_size, program_flags))
+
+def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
+  
+  # at this point, rank is just machine rank.
+  rank = program_flags['rank']
+
+  ckpter = None
+  if rank == 0:
+    # only ever first rank do the ckpt to save time.
+    ckpter = Checkpointer(serialization_dir=program_flags['ckpt_dir'], num_serialized_models_to_keep=2)
+
+  if world_size > 1:
+    # NOTE: however here, we need to convert rank to beglobal rank among processes
+    # machine * gpus per node + our current gpu index
+    # see https://github.com/pytorch/examples/blob/master/imagenet/main.py
+    rank = rank * ngpus_per_node + gpu_index
+  
+  logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset = pre_init(program_flags, ngpus_per_node)
+
+  dist.init_process_group(backend=program_flags['dist_backend'], init_method=program_flags['dist_method'], world_size=world_size, rank=rank)
+  
+  # Set cuda to a single gpu context  
+  torch.cuda.set_device(gpu_index)
+  device = torch.device("cuda:%d" % rank)
+  model.cuda(gpu_index)
+  
+
+  trainer = DistributeTrainer(rank=rank, 
+                              worldsize=world_size, 
+                              ngpus_per_node=ngpus_per_node, 
+                              model=model, 
+                              optimizer=optimizer, 
+                              iterator=iterator,
+                              train_dataset=train_dataset,
+                              validation_dataset=validation_dataset,
+                              serialization_dir=program_flags['ckpt_dir'],
+                              Checkpointer=ckpter,
+                              log_batch_size_period=20,
+                              )
+
+  start_time = time.time()
+  trainer.train()
+  final_time = time.time() - start_time
+  logger.info("Finished training: ran for %d secs", final_time)
+  final_output(FLAGS.flag_values_dict, model, device, logger, reader, out_feature_key, start_time)
 
 def single_worker(logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset):
+  
   _cudart = U.get_cudart()
   device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
   if _cudart is None:
