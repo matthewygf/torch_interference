@@ -78,14 +78,13 @@ class DistributeTrainer(DistributedTrainerBase):
     self._validation_metric = validation_metric[1:]
     self._num_epochs = num_epochs
 
-    # We only ckpt for rank = 0
-    if self._rank == 0:
-      if checkpointer is not None:
-        self._checkpointer = checkpointer
-      else:
-        self._checkpointer = Checkpointer(serialization_dir,
-                                          keep_serialized_model_every_num_seconds,
-                                          num_serialized_models_to_keep)
+    # NOTE: although We have ckpter for everyone, only rank 0 of each node should be able to ckpt
+    if checkpointer is not None:
+      self._checkpointer = checkpointer
+    else:
+      self._checkpointer = Checkpointer(serialization_dir,
+                                        keep_serialized_model_every_num_seconds,
+                                        num_serialized_models_to_keep)
 
     self._model_save_interval = model_save_interval
     
