@@ -214,6 +214,8 @@ class DistributeTrainer(DistributedTrainerBase):
               param_norm = torch.norm(param.view(-1, )).cpu()
               self._tensorboard.add_train_scalar("gradient_update/" + name,
                                                   update_norm / (param_norm + 1e-7))
+        else:
+          self.optimizer.step()
       else:
         self.optimizer.step()
 
@@ -222,13 +224,13 @@ class DistributeTrainer(DistributedTrainerBase):
       if self._moving_average is not None:
         self._moving_average.apply(batch_num_total)
 
-      if self._is_chief:
-        metrics = get_metrics(self.model, device, self._worldsize, train_loss, batches_this_epoch)
+      metrics = get_metrics(self.model, device, self._worldsize, train_loss, batches_this_epoch)
 
-        description = training_util.description_from_metrics(metrics)
-
-        train_generator_tqdm.set_description(description, refresh=False)
+      description = training_util.description_from_metrics(metrics)
+      description = f"Rank{self._rank}: {description}"
+      train_generator_tqdm.set_description(description, refresh=False)
       
+      if self._is_chief:
         # Log parameter values to Tensorboard
         if self._tensorboard.should_log_this_batch():
           self._tensorboard.log_parameter_and_gradient_statistics(self.model, batch_grad_norm)
