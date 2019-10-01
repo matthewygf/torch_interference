@@ -278,17 +278,17 @@ def final_output(program_flags, model, device, logger, reader, out_feature_key, 
   if program_flags['task'] == 'lm':
     for _ in range(50):
       bidir_state = 2*program_flags['num_layers'] if program_flags['bidirectional'] else program_flags['num_layers']
-      state = (torch.zeros(bidir_state, 1, FLAGS.hiddens_dim).to(device),
-        torch.zeros(bidir_state, 1, FLAGS.hiddens_dim).to(device))
+      state = (torch.zeros(bidir_state, 1, program_flags['hiddens_dim']).to(device),
+        torch.zeros(bidir_state, 1, program_flags['hiddens_dim']).to(device))
       tokens, _ = model.generate(device, state)
       logger.info("GENERATED WORDS:")
       logger.info(' '.join(token.text for token in tokens))
   else:
     model.eval()
-    predictor = predictors_factory.get_predictors(FLAGS.dataset, model, reader)
-    test_tokens_or_sentence = test_sentences[FLAGS.dataset]
+    predictor = predictors_factory.get_predictors(program_flags['dataset'], model, reader)
+    test_tokens_or_sentence = test_sentences[program_flags['dataset']]
     pred_logits = predictor.predict(test_tokens_or_sentence)
-    pred_logits_key = predictors_factory.get_logits_key(FLAGS.task)
+    pred_logits_key = predictors_factory.get_logits_key(program_flags['task'])
     if pred_logits_key is not None:
       pred_logits = pred_logits[pred_logits_key]
 
@@ -298,8 +298,6 @@ def final_output(program_flags, model, device, logger, reader, out_feature_key, 
     else:
       pred_logits["predictions"] = np.asarray(pred_logits["predictions"])
       logger.info(model.decode(pred_logits))
-  final_time = time.time() - start_time
-  logger.info("Finished application: ran for %d secs", final_time)
   
 if __name__ == "__main__":
   app.run(main)

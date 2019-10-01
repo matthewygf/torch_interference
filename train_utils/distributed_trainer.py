@@ -227,9 +227,8 @@ class DistributeTrainer(DistributedTrainerBase):
       metrics = get_metrics(self.model, device, self._worldsize, train_loss, batches_this_epoch)
 
       description = training_util.description_from_metrics(metrics)
-      description = f"Rank{self._rank}: {description}"
-      train_generator_tqdm.set_description(description, refresh=False)
-      
+      train_generator_tqdm.set_description(("Rank %d: " % self._rank) + description, refresh=False)
+
       if self._is_chief:
         # Log parameter values to Tensorboard
         if self._tensorboard.should_log_this_batch():
