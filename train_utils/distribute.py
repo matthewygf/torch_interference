@@ -1,6 +1,6 @@
 import torch
 import torch.utils.data.distributed as dist
-
+from allennlp.models import Model
 from allennlp.training import util as allen_training_util
 
 def distributed_dataloader(dataset, threads=2, batch_size=32):
