@@ -123,7 +123,7 @@ class DistributeTrainer(DistributedTrainerBase):
   def batch_loss(self, batch_group: List[TensorDict], for_training: bool) -> torch.Tensor:
     assert len(batch_group) == 1
     batch = batch_group[0]
-    batch = nn_util.move_to_device(batch, self._cuda_device)
+    batch = nn_util.move_to_device(batch, self._cuda_device[0])
     output_dict = self.model(**batch)
 
     try:
@@ -250,7 +250,7 @@ class DistributeTrainer(DistributedTrainerBase):
             self._tensorboard.add_train_scalar("current_batch_size", cur_batch)
             self._tensorboard.add_train_scalar("mean_batch_size", average)
       
-      if self.is_chief:
+      if self._is_chief:
         # Save model if needed.
         if self._model_save_interval is not None and (
                 time.time() - last_save_time > self._model_save_interval
@@ -281,7 +281,7 @@ class DistributeTrainer(DistributedTrainerBase):
     else:
         val_iterator = self.iterator
 
-    num_gpus = len(self._cuda_devices)
+    num_gpus = len(self._cuda_device)
 
     raw_val_generator = val_iterator(self._validation_data,
                                       num_epochs=1,

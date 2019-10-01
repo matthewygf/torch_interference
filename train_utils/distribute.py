@@ -1,5 +1,5 @@
 import torch
-import torch.utils.data.distributed as dist
+import torch.distributed as dist
 from allennlp.models import Model
 from allennlp.training import util as allen_training_util
 from typing import Dict
@@ -23,7 +23,7 @@ def get_metrics(model: Model, device: torch.device, world_size: int, total_loss:
   for metric_name, metric_val in metrics.items():
     metric_tensor = torch.tensor(metric_val).to(device)
     metric_gathered = [torch.zeros_like(metric_tensor) for _ in range(world_size)]
-  
+    
     dist.all_gather(metric_gathered, metric_tensor)
     metric_gathered = torch.tensor(metric_gathered)
     aggregated_metrics[metric_name] = metric_gathered.mean().item()

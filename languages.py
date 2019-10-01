@@ -232,7 +232,9 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
   trainer.train()
   final_time = time.time() - start_time
   logger.info("Finished training: ran for %d secs", final_time)
-  final_output(FLAGS.flag_values_dict, model, device, logger, reader, out_feature_key, start_time)
+  if rank == 0:
+    # only 1 worker need to do an output check.
+    final_output(program_flags, model, device, logger, reader, out_feature_key, start_time)
 
 def single_worker(logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset):
   
@@ -267,7 +269,7 @@ def single_worker(logger, model, reader, out_feature_key, optimizer, iterator, t
       _cudart.cudaProfilerStop()
   final_time = time.time() - start_time
   logger.info("Finished training: ran for %d secs", final_time)
-  final_output(FLAGS.flag_values_dict, model, device, logger, reader, out_feature_key, start_time)
+  final_output(FLAGS.flag_values_dict(), model, device, logger, reader, out_feature_key, start_time)
 
 
 def final_output(program_flags, model, device, logger, reader, out_feature_key, start_time):
