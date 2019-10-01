@@ -217,13 +217,14 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
   trainer = DistributeTrainer(rank=rank, 
                               worldsize=world_size, 
                               ngpus_per_node=ngpus_per_node, 
+                              cuda_device=[rank],
                               model=model, 
                               optimizer=optimizer, 
                               iterator=iterator,
                               train_dataset=train_dataset,
                               validation_dataset=validation_dataset,
                               serialization_dir=program_flags['ckpt_dir'],
-                              Checkpointer=ckpter,
+                              checkpointer=ckpter,
                               log_batch_size_period=20,
                               )
 

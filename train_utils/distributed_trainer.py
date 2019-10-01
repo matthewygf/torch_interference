@@ -37,6 +37,7 @@ class DistributeTrainer(DistributedTrainerBase):
                rank: int,
                worldsize: int,
                ngpus_per_node: int,
+               cuda_device: Union[int, List],
                model: Model,
                optimizer: torch.optim.Optimizer,
                iterator: DataIterator,
@@ -52,7 +53,6 @@ class DistributeTrainer(DistributedTrainerBase):
                keep_serialized_model_every_num_seconds: int = None,
                checkpointer: Checkpointer = None,
                model_save_interval: float = None,
-               cuda_device: Union[int, List] = 0,
                grad_norm: Optional[float] = None,
                grad_clipping: Optional[float] = None,
                learning_rate_scheduler: Optional[LearningRateScheduler] = None,
@@ -94,6 +94,11 @@ class DistributeTrainer(DistributedTrainerBase):
     self._learning_rate_scheduler = learning_rate_scheduler
     self._momentum_scheduler = momentum_scheduler
     self._moving_average = moving_average
+
+    # We keep the total batch number as an instance variable because it
+    # is used inside a closure for the hook which logs activations in
+    # ``_enable_activation_logging``.
+    self._batch_num_total = 0
 
     # NOTE: log.
     serialization_dir = os.path.join(serialization_dir, str(rank))
