@@ -352,11 +352,11 @@ class DistributeTrainer(DistributedTrainerBase):
           metrics['peak_cpu_memory_MB'] = max(metrics.get('peak_cpu_memory_MB', 0),
                                               train_metrics['cpu_memory_MB'])
 
-        if self._validation_data is not None and self._is_chief:
+        if self._validation_data is not None:
           with torch.no_grad():
             # We have a validation set, so compute all the metrics on it.
             val_loss, num_batches = self._validation_loss()
-            val_metrics = get_metrics(self.model, self._device, self._worldsize, val_loss, num_batches, reset=True)
+            val_metrics = training_util.get_metrics(self.model, val_loss, num_batches, reset=True)
 
             # Check validation metric for early stopping
             this_epoch_val_metric = val_metrics[self._validation_metric]

@@ -203,7 +203,7 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
     # machine * gpus per node + our current gpu index
     # see https://github.com/pytorch/examples/blob/master/imagenet/main.py
     rank = rank * ngpus_per_node + gpu_index
-  
+  program_flags['run_name'] = program_flags['run_name'] + str(rank)
   logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset = pre_init(program_flags, ngpus_per_node)
 
   dist.init_process_group(backend=program_flags['dist_backend'], init_method=program_flags['dist_method'], world_size=world_size, rank=rank)
@@ -213,6 +213,7 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
   device = torch.device("cuda:%d" % rank)
   model.cuda(gpu_index)
   
+  logger.info("Rank %d --- preparing to start training", rank)
 
   trainer = DistributeTrainer(rank=rank, 
                               worldsize=world_size, 
@@ -231,7 +232,7 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
   start_time = time.time()
   trainer.train()
   final_time = time.time() - start_time
-  logger.info("Finished training: ran for %d secs", final_time)
+  logger.info("Rank %d Finished training: ran for %d secs", rank, final_time)
   if rank == 0:
     # only 1 worker need to do an output check.
     final_output(program_flags, model, device, logger, reader, out_feature_key, start_time)
