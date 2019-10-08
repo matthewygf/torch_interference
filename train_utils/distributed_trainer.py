@@ -37,6 +37,7 @@ class DistributeTrainer(DistributedTrainerBase):
                rank: int,
                worldsize: int,
                ngpus_per_node: int,
+               cuda_device: Union[int, List],
                model: Model,
                optimizer: torch.optim.Optimizer,
                iterator: DataIterator,
@@ -52,7 +53,6 @@ class DistributeTrainer(DistributedTrainerBase):
                keep_serialized_model_every_num_seconds: int = None,
                checkpointer: Checkpointer = None,
                model_save_interval: float = None,
-               cuda_device: Union[int, List] = 0,
                grad_norm: Optional[float] = None,
                grad_clipping: Optional[float] = None,
                learning_rate_scheduler: Optional[LearningRateScheduler] = None,
@@ -78,14 +78,13 @@ class DistributeTrainer(DistributedTrainerBase):
     self._validation_metric = validation_metric[1:]
     self._num_epochs = num_epochs
 
-    # We only ckpt for rank = 0
-    if self._rank == 0:
-      if checkpointer is not None:
-        self._checkpointer = checkpointer
-      else:
-        self._checkpointer = Checkpointer(serialization_dir,
-                                          keep_serialized_model_every_num_seconds,
-                                          num_serialized_models_to_keep)
+    # NOTE: although We have ckpter for everyone, only rank 0 of each node should be able to ckpt
+    if checkpointer is not None:
+      self._checkpointer = checkpointer
+    else:
+      self._checkpointer = Checkpointer(serialization_dir,
+                                        keep_serialized_model_every_num_seconds,
+                                        num_serialized_models_to_keep)
 
     self._model_save_interval = model_save_interval
     
@@ -94,6 +93,11 @@ class DistributeTrainer(DistributedTrainerBase):
     self._learning_rate_scheduler = learning_rate_scheduler
     self._momentum_scheduler = momentum_scheduler
     self._moving_average = moving_average
+
+    # We keep the total batch number as an instance variable because it
+    # is used inside a closure for the hook which logs activations in
+    # ``_enable_activation_logging``.
+    self._batch_num_total = 0
 
     # NOTE: log.
     serialization_dir = os.path.join(serialization_dir, str(rank))
@@ -119,7 +123,7 @@ class DistributeTrainer(DistributedTrainerBase):
   def batch_loss(self, batch_group: List[TensorDict], for_training: bool) -> torch.Tensor:
     assert len(batch_group) == 1
     batch = batch_group[0]
-    batch = nn_util.move_to_device(batch, self._cuda_device)
+    batch = nn_util.move_to_device(batch, self._cuda_device[0])
     output_dict = self.model(**batch)
 
     try:
@@ -210,6 +214,8 @@ class DistributeTrainer(DistributedTrainerBase):
               param_norm = torch.norm(param.view(-1, )).cpu()
               self._tensorboard.add_train_scalar("gradient_update/" + name,
                                                   update_norm / (param_norm + 1e-7))
+        else:
+          self.optimizer.step()
       else:
         self.optimizer.step()
 
@@ -218,13 +224,12 @@ class DistributeTrainer(DistributedTrainerBase):
       if self._moving_average is not None:
         self._moving_average.apply(batch_num_total)
 
+      metrics = get_metrics(self.model, device, self._worldsize, train_loss, batches_this_epoch)
+
+      description = training_util.description_from_metrics(metrics)
+      train_generator_tqdm.set_description(("Rank %d: " % self._rank) + description, refresh=False)
+
       if self._is_chief:
-        metrics = get_metrics(self.model, device, self._worldsize, train_loss, batches_this_epoch)
-
-        description = training_util.description_from_metrics(metrics)
-
-        train_generator_tqdm.set_description(description, refresh=False)
-      
         # Log parameter values to Tensorboard
         if self._tensorboard.should_log_this_batch():
           self._tensorboard.log_parameter_and_gradient_statistics(self.model, batch_grad_norm)
@@ -246,7 +251,7 @@ class DistributeTrainer(DistributedTrainerBase):
             self._tensorboard.add_train_scalar("current_batch_size", cur_batch)
             self._tensorboard.add_train_scalar("mean_batch_size", average)
       
-      if self.is_chief:
+      if self._is_chief:
         # Save model if needed.
         if self._model_save_interval is not None and (
                 time.time() - last_save_time > self._model_save_interval
@@ -277,7 +282,7 @@ class DistributeTrainer(DistributedTrainerBase):
     else:
         val_iterator = self.iterator
 
-    num_gpus = len(self._cuda_devices)
+    num_gpus = len(self._cuda_device)
 
     raw_val_generator = val_iterator(self._validation_data,
                                       num_epochs=1,
@@ -348,11 +353,11 @@ class DistributeTrainer(DistributedTrainerBase):
           metrics['peak_cpu_memory_MB'] = max(metrics.get('peak_cpu_memory_MB', 0),
                                               train_metrics['cpu_memory_MB'])
 
-        if self._validation_data is not None and self._is_chief:
+        if self._validation_data is not None:
           with torch.no_grad():
             # We have a validation set, so compute all the metrics on it.
             val_loss, num_batches = self._validation_loss()
-            val_metrics = get_metrics(self.model, self._device, self._worldsize, val_loss, num_batches, reset=True)
+            val_metrics = training_util.get_metrics(self.model, val_loss, num_batches, reset=True)
 
             # Check validation metric for early stopping
             this_epoch_val_metric = val_metrics[self._validation_metric]

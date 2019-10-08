@@ -203,7 +203,7 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
     # machine * gpus per node + our current gpu index
     # see https://github.com/pytorch/examples/blob/master/imagenet/main.py
     rank = rank * ngpus_per_node + gpu_index
-  
+  program_flags['run_name'] = program_flags['run_name'] + str(rank)
   logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset = pre_init(program_flags, ngpus_per_node)
 
   dist.init_process_group(backend=program_flags['dist_backend'], init_method=program_flags['dist_method'], world_size=world_size, rank=rank)
@@ -213,25 +213,29 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
   device = torch.device("cuda:%d" % rank)
   model.cuda(gpu_index)
   
+  logger.info("Rank %d --- preparing to start training", rank)
 
   trainer = DistributeTrainer(rank=rank, 
                               worldsize=world_size, 
                               ngpus_per_node=ngpus_per_node, 
+                              cuda_device=[rank],
                               model=model, 
                               optimizer=optimizer, 
                               iterator=iterator,
                               train_dataset=train_dataset,
                               validation_dataset=validation_dataset,
                               serialization_dir=program_flags['ckpt_dir'],
-                              Checkpointer=ckpter,
+                              checkpointer=ckpter,
                               log_batch_size_period=20,
                               )
 
   start_time = time.time()
   trainer.train()
   final_time = time.time() - start_time
-  logger.info("Finished training: ran for %d secs", final_time)
-  final_output(FLAGS.flag_values_dict, model, device, logger, reader, out_feature_key, start_time)
+  logger.info("Rank %d Finished training: ran for %d secs", rank, final_time)
+  if rank == 0:
+    # only 1 worker need to do an output check.
+    final_output(program_flags, model, device, logger, reader, out_feature_key, start_time)
 
 def single_worker(logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset):
   
@@ -266,7 +270,7 @@ def single_worker(logger, model, reader, out_feature_key, optimizer, iterator, t
       _cudart.cudaProfilerStop()
   final_time = time.time() - start_time
   logger.info("Finished training: ran for %d secs", final_time)
-  final_output(FLAGS.flag_values_dict, model, device, logger, reader, out_feature_key, start_time)
+  final_output(FLAGS.flag_values_dict(), model, device, logger, reader, out_feature_key, start_time)
 
 
 def final_output(program_flags, model, device, logger, reader, out_feature_key, start_time):
@@ -274,17 +278,17 @@ def final_output(program_flags, model, device, logger, reader, out_feature_key, 
   if program_flags['task'] == 'lm':
     for _ in range(50):
       bidir_state = 2*program_flags['num_layers'] if program_flags['bidirectional'] else program_flags['num_layers']
-      state = (torch.zeros(bidir_state, 1, FLAGS.hiddens_dim).to(device),
-        torch.zeros(bidir_state, 1, FLAGS.hiddens_dim).to(device))
+      state = (torch.zeros(bidir_state, 1, program_flags['hiddens_dim']).to(device),
+        torch.zeros(bidir_state, 1, program_flags['hiddens_dim']).to(device))
       tokens, _ = model.generate(device, state)
       logger.info("GENERATED WORDS:")
       logger.info(' '.join(token.text for token in tokens))
   else:
     model.eval()
-    predictor = predictors_factory.get_predictors(FLAGS.dataset, model, reader)
-    test_tokens_or_sentence = test_sentences[FLAGS.dataset]
+    predictor = predictors_factory.get_predictors(program_flags['dataset'], model, reader)
+    test_tokens_or_sentence = test_sentences[program_flags['dataset']]
     pred_logits = predictor.predict(test_tokens_or_sentence)
-    pred_logits_key = predictors_factory.get_logits_key(FLAGS.task)
+    pred_logits_key = predictors_factory.get_logits_key(program_flags['task'])
     if pred_logits_key is not None:
       pred_logits = pred_logits[pred_logits_key]
 
@@ -294,8 +298,6 @@ def final_output(program_flags, model, device, logger, reader, out_feature_key, 
     else:
       pred_logits["predictions"] = np.asarray(pred_logits["predictions"])
       logger.info(model.decode(pred_logits))
-  final_time = time.time() - start_time
-  logger.info("Finished application: ran for %d secs", final_time)
   
 if __name__ == "__main__":
   app.run(main)
