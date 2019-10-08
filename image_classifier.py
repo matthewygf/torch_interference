@@ -205,7 +205,7 @@ def single_main():
       # TODO: currently just ckpt every epoch
       # plus 1 because next time around is inclusive.
       if FLAGS.ckpt_dir is not None:
-        save_ckpt(logger, epoch+1, model, optimizer)
+        save_ckpt(logger, epoch+1, model, optimizer, FLAGS.ckpt_dir)
 
   finally:
     if status == 0:
