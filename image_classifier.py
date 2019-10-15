@@ -53,7 +53,7 @@ flags.DEFINE_integer('rank', 0, "distributed rank , which machine you are. start
 flags.DEFINE_string("dist_backend", None, "Which distributed backend to use, if defined, then will initialize distribute process group.")
 #https://pytorch.org/tutorials/beginner/aws_distributed_training_tutorial.html
 flags.DEFINE_string("dist_method", None, "Which distributed method to use. e.g. starts with file://path/to/file, env://, tcp://IP:PORT. ")
-flags.DEFINE_integer("world_size", 1, "Number of distributed process. e.g. machines.")
+flags.DEFINE_integer("world_size", 1, "Number of distributed process. e.g. all the GPUs.")
 flags.DEFINE_integer('thread_workers', 2, 'Number of threads for data loader')
 
 flags.mark_flag_as_required('run_name')
@@ -140,7 +140,7 @@ def distributed_main():
 
   # NOTE: we are using ngpus nprocess per node
   # hence we need to adjust the world size to be the following
-  world_size = ngpus_per_node * FLAGS.world_size
+  world_size = FLAGS.world_size
   proc_flags = FLAGS.flag_values_dict()
   mlproc.spawn(worker, nprocs=ngpus_per_node, args=(ngpus_per_node, world_size, proc_flags))
 
