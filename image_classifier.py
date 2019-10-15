@@ -226,7 +226,7 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
     # machine * gpus per node + our current gpu index
     # see https://github.com/pytorch/examples/blob/master/imagenet/main.py
     rank = rank * ngpus_per_node + gpu_index
-  
+  is_chief = rank % ngpus_per_node == 0
   logger.info("Rank %d: using GPU: %d for training, total world size: %d, dist method: %s", rank, gpu_index, world_size, proc_flags['dist_method'])
   
   dist.init_process_group(backend=proc_flags['dist_backend'], init_method=proc_flags['dist_method'], world_size=world_size, rank=rank)
@@ -276,7 +276,7 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
 
   torch.backends.cudnn.deterministic = True
   dataset_dir = proc_flags['dataset_dir']
-  sampler, dist_train_loader, val_loader = data_utils.get_distribute_dataloader(dataset_fn, dataset_dir, batch_size, thread_workers)
+  sampler, dist_train_loader, val_loader = data_utils.get_distribute_dataloader(dataset_fn, dataset_dir, batch_size, thread_workers, is_chief)
   max_epochs = proc_flags['max_epochs']
   
   for epoch in range(current_epochs, max_epochs):
