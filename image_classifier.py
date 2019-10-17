@@ -49,6 +49,8 @@ flags.DEFINE_bool('add_random_transforms', False, 'whether to add horizontal fli
 # NOTE: We use N PROCESS N GPUS distributed method, because its the fastest for pytorch.
 flags.DEFINE_integer('num_gpus', 1, "Number of gpus to use within each rank.")
 flags.DEFINE_boolean('discover_gpus', False, "if set to true, then will use torch cuda device_count to override num_gpus")
+flags.DEFINE_boolean('assume_same_gpus', True, "if set to true, then assume same gpus on other ranks, our local ranks would be (rank * ngpus + gpu index), otherwise, (rank * rank_scale_factor + gpu index)")
+flags.DEFINE_integer('rank_scale_factor', 1 , "scale the local rank by this factor, only has effect, if assume_same_gpus is set to false")
 flags.DEFINE_integer('rank', 0, "distributed rank , which machine you are. start with 0.")
 flags.DEFINE_string("dist_backend", None, "Which distributed backend to use, if defined, then will initialize distribute process group.")
 #https://pytorch.org/tutorials/beginner/aws_distributed_training_tutorial.html
@@ -225,7 +227,11 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
     # NOTE: however here, we need to convert rank to beglobal rank among processes
     # machine * gpus per node + our current gpu index
     # see https://github.com/pytorch/examples/blob/master/imagenet/main.py
-    rank = rank * ngpus_per_node + gpu_index
+    if proc_flags['assume_same_gpus']:
+      rank = rank * ngpus_per_node + gpu_index
+    else:
+      rank = rank * proc_flags['rank_scale_factor'] + gpu_index
+
   is_chief = rank % ngpus_per_node == 0
   logger.info("Rank %d: using GPU: %d for training, total world size: %d, dist method: %s", rank, gpu_index, world_size, proc_flags['dist_method'])
   
