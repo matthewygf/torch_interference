@@ -76,11 +76,13 @@ flags.DEFINE_string('ckpt_dir', '/tmp/ckpt', 'the directory to load and save ckp
 # NOTE: We use N PROCESS N GPUS distributed method, because its the fastest for pytorch.
 flags.DEFINE_integer('num_gpus', 1, "Number of gpus to use within each rank.")
 flags.DEFINE_boolean('discover_gpus', False, "if set to true, then will use torch cuda device_count to override num_gpus")
+flags.DEFINE_boolean('assume_same_gpus', True, "if set to true, then assume same gpus on other ranks, our local ranks would be (rank * ngpus + gpu index), otherwise, (rank * rank_scale_factor + gpu index)")
+flags.DEFINE_integer('rank_scale_factor', 1 , "scale the local rank by this factor, only has effect, if assume_same_gpus is set to false")
 flags.DEFINE_integer('rank', 0, "distributed rank , which machine you are. start with 0.")
 flags.DEFINE_string("dist_backend", None, "Which distributed backend to use, if defined, then will initialize distribute process group.")
 #https://pytorch.org/tutorials/beginner/aws_distributed_training_tutorial.html
 flags.DEFINE_string("dist_method", None, "Which distributed method to use. e.g. starts with file://path/to/file, env://, tcp://IP:PORT. ")
-flags.DEFINE_integer("world_size", 1, "Number of distributed process. e.g. machines.")
+flags.DEFINE_integer("world_size", 1, "Number of distributed process. e.g. count all gpus in machines.")
 
 
 flags.mark_flag_as_required('run_name')
@@ -183,9 +185,8 @@ def distribute_main(program_flags):
     ngpus_per_node = torch.cuda.device_count()
   else:
     ngpus_per_node = program_flags['num_gpus']
-  # NOTE: we are using ngpus nprocess per node
-  # hence we need to adjust the world size to be the following
-  world_size = ngpus_per_node * program_flags['world_size']
+
+  world_size = program_flags['world_size']
   mlproc.spawn(distribute_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, world_size, program_flags))
 
 def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
@@ -199,10 +200,14 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
     ckpter = Checkpointer(serialization_dir=program_flags['ckpt_dir'], num_serialized_models_to_keep=2)
 
   if world_size > 1:
-    # NOTE: however here, we need to convert rank to beglobal rank among processes
+    # NOTE: however here, we need to convert rank to be global rank among processes
     # machine * gpus per node + our current gpu index
     # see https://github.com/pytorch/examples/blob/master/imagenet/main.py
-    rank = rank * ngpus_per_node + gpu_index
+    if program_flags['assume_same_gpus']:
+      rank = rank * ngpus_per_node + gpu_index
+    else:
+      rank = rank * program_flags['rank_scale_factor'] + gpu_index
+    
   program_flags['run_name'] = program_flags['run_name'] + str(rank)
   logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset = pre_init(program_flags, ngpus_per_node)
 
