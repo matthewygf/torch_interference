@@ -426,9 +426,10 @@ class DistributeTrainer(DistributedTrainerBase):
     self._tensorboard.close()
 
     # Load the best model state before returning
-    best_model_state = self._checkpointer.best_model_state()
-    if best_model_state:
-        self.model.load_state_dict(best_model_state)
+    if self._is_chief:
+      best_model_state = self._checkpointer.best_model_state()
+      if best_model_state:
+          self.model.load_state_dict(best_model_state)
 
     return metrics
 
