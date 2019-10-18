@@ -179,7 +179,7 @@ class DistributeTrainer(DistributedTrainerBase):
                                       total=num_training_batches)
     cumulative_batch_size = 0
     # NOTE: only work in nprocess_ngpus
-    device = torch.device("cuda:%d" % self.cuda_device[0])
+    device = torch.device("cuda:%d" % self._cuda_device[0])
     for batch_group in train_generator_tqdm:
       batches_this_epoch += 1
       self._batch_num_total += 1
