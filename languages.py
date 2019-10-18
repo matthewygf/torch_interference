@@ -214,6 +214,10 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
   dist.init_process_group(backend=program_flags['dist_backend'], init_method=program_flags['dist_method'], world_size=world_size, rank=rank)
   
   logger.info("Rank %d --- preparing to start training", rank)
+# Set cuda to a single gpu context  
+  torch.cuda.set_device(gpu_index)
+  device = torch.device("cuda:%d" % gpu_index)
+  model.cuda(gpu_index)
 
   trainer = DistributeTrainer(rank=rank, 
                               worldsize=world_size, 
@@ -228,7 +232,7 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
                               checkpointer=ckpter,
                               log_batch_size_period=20,
                               )
-  device = torch.device("cuda:%d" % gpu_index)
+                              
   logger.info(device)
   start_time = time.time()
   trainer.train()
