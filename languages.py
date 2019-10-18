@@ -218,6 +218,8 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
   torch.cuda.set_device(gpu_index)
   device = torch.device("cuda:%d" % gpu_index)
   model.cuda(gpu_index)
+  model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[gpu_index])
+
 
   trainer = DistributeTrainer(rank=rank, 
                               worldsize=world_size, 
