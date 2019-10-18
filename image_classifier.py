@@ -245,7 +245,7 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   torch.cuda.set_device(gpu_index)
   model.cuda(gpu_index)
 
-  batch_size = int(proc_flags['batch_size'] / ngpus_per_node)
+  batch_size = proc_flags['batch_size']
   thread_workers = proc_flags['thread_workers']
   logger.info("****number of thread workers to use for data loader %d", thread_workers)
   # per process per distributed data parallel
