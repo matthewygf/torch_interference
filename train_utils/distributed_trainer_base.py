@@ -31,7 +31,6 @@ class DistributedTrainerBase(Registrable):
     self._rank = rank
     self._worldsize = worldsize
     self._ngpus_per_node = ngpus_per_node
-    self._device = torch.device("cuda:%d" % rank)
 
     self._is_chief = self._rank % self._ngpus_per_node == 0
     
