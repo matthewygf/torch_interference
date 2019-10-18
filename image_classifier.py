@@ -283,6 +283,7 @@ def worker(gpu_index, ngpus_per_node, world_size, proc_flags):
   torch.backends.cudnn.deterministic = True
   dataset_dir = proc_flags['dataset_dir']
   sampler, dist_train_loader, val_loader = data_utils.get_distribute_dataloader(dataset_fn, dataset_dir, batch_size, thread_workers, is_chief)
+  logger.info("*****Rank %d: each sampler has %d", rank, len(sampler))
   max_epochs = proc_flags['max_epochs']
   
   for epoch in range(current_epochs, max_epochs):
