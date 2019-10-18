@@ -280,7 +280,7 @@ def single_worker(logger, model, reader, out_feature_key, optimizer, iterator, t
 
 def final_output(program_flags, model, device, logger, reader, out_feature_key, start_time):
   # TODO: VERY ROUGH.
-  if program_flags['task'] == 'lm':
+  if program_flags['task'] == 'lm' and "lstm" in program_flags['model']:
     for _ in range(50):
       bidir_state = 2*program_flags['num_layers'] if program_flags['bidirectional'] else program_flags['num_layers']
       state = (torch.zeros(bidir_state, 1, program_flags['hiddens_dim']).to(device),
@@ -294,6 +294,7 @@ def final_output(program_flags, model, device, logger, reader, out_feature_key, 
     test_tokens_or_sentence = test_sentences[program_flags['dataset']]
     pred_logits = predictor.predict(test_tokens_or_sentence)
     pred_logits_key = predictors_factory.get_logits_key(program_flags['task'])
+    logger.info(pred_logits)
     if pred_logits_key is not None:
       pred_logits = pred_logits[pred_logits_key]
 
