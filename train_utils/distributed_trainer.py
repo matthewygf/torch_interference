@@ -388,7 +388,7 @@ class DistributeTrainer(DistributedTrainerBase):
         for key, value in val_metrics.items():
           metrics["validation_" + key] = value
 
-        if self._metric_tracker.is_best_so_far():
+        if self._metric_tracker.is_best_so_far() and self._is_chief:
           # Update all the best_ metrics.
           # (Otherwise they just stay the same as they were.)
           metrics['best_epoch'] = epoch

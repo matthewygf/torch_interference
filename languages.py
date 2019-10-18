@@ -280,11 +280,17 @@ def single_worker(logger, model, reader, out_feature_key, optimizer, iterator, t
 
 def final_output(program_flags, model, device, logger, reader, out_feature_key, start_time):
   # TODO: VERY ROUGH.
-  if program_flags['task'] == 'lm' and "lstm" in program_flags['model']:
+  if program_flags['task'] == 'lm':
+
+    if "lstm" not in program_flags['model']:
+      # TODO: transformer can not use generate() below, not sure why :/
+      return
+
     for _ in range(50):
       bidir_state = 2*program_flags['num_layers'] if program_flags['bidirectional'] else program_flags['num_layers']
       state = (torch.zeros(bidir_state, 1, program_flags['hiddens_dim']).to(device),
         torch.zeros(bidir_state, 1, program_flags['hiddens_dim']).to(device))
+
       tokens, _ = model.generate(device, state)
       logger.info("GENERATED WORDS:")
       logger.info(' '.join(token.text for token in tokens))
