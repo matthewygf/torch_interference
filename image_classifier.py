@@ -192,7 +192,7 @@ def single_main():
     print("DNN_Features: ", str(stats))
     return
 
-  train_loader, val_lodaer = data_utils.get_standard_dataloader(dataset_fn, FLAGS.dataset_dir, FLAGS.batch_size)
+  train_loader, val_lodaer = data_utils.get_standard_dataloader(dataset_fn, FLAGS.dataset_dir, FLAGS.batch_size, download=True)
   
   loss_op = torch.nn.CrossEntropyLoss()
   start_time = time.time()
