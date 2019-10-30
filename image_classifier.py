@@ -160,26 +160,34 @@ def single_main():
 
   dataset_fn = datasets_factory[FLAGS.dataset]
   dataset_classes = datasets_sizes[FLAGS.dataset]
-  have_ckpt = (FLAGS.ckpt_dir is not None and any("model_state_epoch" in x for x in os.listdir(FLAGS.ckpt_dir)))
+  try:
+    have_ckpt = (FLAGS.ckpt_dir is not None and any("model_state_epoch" in x for x in os.listdir(FLAGS.ckpt_dir)))
+  except:
+    have_ckpt = False
+    
   model = model_factory.get_model(FLAGS.model, FLAGS.dataset, dataset_classes)
   optimizer = optim.Adam(model.parameters(), lr=0.001)
 
   if have_ckpt:
     files = os.listdir(FLAGS.ckpt_dir)
     model_checkpoints = [x for x in files if "model_state_epoch" in x]
-    logger.info("**********Found ckpt: %s" % model_checkpoints[-1])
-    # TODO: found the epoch ckpt, for now we just keep one.
-    ckpt_path = os.path.join(FLAGS.ckpt_dir, model_checkpoints[-1])
-    ckpt = torch.load(ckpt_path)
-    current_epochs = ckpt['epoch']
-    model.load_state_dict(ckpt['model_state_dict'])
-    optimizer.load_state_dict(ckpt['optim_state_dict'])
-    # Move to device. 
-    for state in optimizer.state.values():
-      for k, v in state.items():
-        if isinstance(v, torch.Tensor):
-          state[k] = v.to(device)
-    logger.info("******Loaded ckpt")
+    if len(model_checkpoints) > 0: 
+      logger.info("**********Found ckpt: %s" % model_checkpoints[-1])
+      # TODO: found the epoch ckpt, for now we just keep one.
+      ckpt_path = os.path.join(FLAGS.ckpt_dir, model_checkpoints[-1])
+      ckpt = torch.load(ckpt_path)
+      current_epochs = ckpt['epoch']
+      model.load_state_dict(ckpt['model_state_dict'])
+      optimizer.load_state_dict(ckpt['optim_state_dict'])
+      # Move to device. 
+      for state in optimizer.state.values():
+        for k, v in state.items():
+          if isinstance(v, torch.Tensor):
+            state[k] = v.to(device)
+      logger.info("******Loaded ckpt")
+    else:
+      logger.info("No ckpt found")
+      current_epochs = 1
   else:
     logger.info("No ckpt found")
     current_epochs = 1
