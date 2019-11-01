@@ -175,16 +175,23 @@ def single_main():
       logger.info("**********Found ckpt: %s" % model_checkpoints[-1])
       # TODO: found the epoch ckpt, for now we just keep one.
       ckpt_path = os.path.join(FLAGS.ckpt_dir, model_checkpoints[-1])
-      ckpt = torch.load(ckpt_path)
-      current_epochs = ckpt['epoch']
-      model.load_state_dict(ckpt['model_state_dict'])
-      optimizer.load_state_dict(ckpt['optim_state_dict'])
-      # Move to device. 
-      for state in optimizer.state.values():
-        for k, v in state.items():
-          if isinstance(v, torch.Tensor):
-            state[k] = v.to(device)
-      logger.info("******Loaded ckpt")
+      try:
+        ckpt = torch.load(ckpt_path)
+      except:
+        ckpt = None
+      if ckpt is not None:
+        current_epochs = ckpt['epoch']
+        model.load_state_dict(ckpt['model_state_dict'])
+        optimizer.load_state_dict(ckpt['optim_state_dict'])
+        # Move to device. 
+        for state in optimizer.state.values():
+          for k, v in state.items():
+            if isinstance(v, torch.Tensor):
+              state[k] = v.to(device)
+        logger.info("******Loaded ckpt")
+      else:
+        logger.info("Cannot load ckpt")
+        current_epochs = 1
     else:
       logger.info("No ckpt found")
       current_epochs = 1
