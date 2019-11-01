@@ -173,11 +173,10 @@ def single_main():
     model_checkpoints = [x for x in files if "model_state_epoch" in x]
     if len(model_checkpoints) > 0: 
       logger.info("**********Found ckpt: %s" % model_checkpoints[-1])
-      # TODO: found the epoch ckpt, for now we just keep one.
       ckpt_path = os.path.join(FLAGS.ckpt_dir, model_checkpoints[-1])
       try:
         ckpt = torch.load(ckpt_path)
-      except:
+      except EOFError:
         ckpt = None
       if ckpt is not None:
         current_epochs = ckpt['epoch']
