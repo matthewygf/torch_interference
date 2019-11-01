@@ -254,7 +254,7 @@ def single_worker(logger, model, reader, out_feature_key, optimizer, iterator, t
   cuda_device = 0 if FLAGS.use_cuda else -1 # TODO: multi GPU
   # NOTE: THIS CKPT Mechanism only ckpt at the end of every epoch.
   # if an epoch is more than 1 day, then you take care of it yourself :P
-  ckpter = Checkpointer(serialization_dir=FLAGS.ckpt_dir, num_serialized_models_to_keep=2)
+  ckpter = Checkpointer(serialization_dir=FLAGS.ckpt_dir, num_serialized_models_to_keep=1)
   trainer = Trainer(model=model,
                     optimizer=optimizer,
                     iterator=iterator,
