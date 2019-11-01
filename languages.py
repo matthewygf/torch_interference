@@ -157,7 +157,7 @@ def pre_init(program_flags, ngpus_per_node=None):
   vocab = Vocabulary.from_instances(
                 train_dataset + validation_dataset, max_vocab_size=program_flags['max_vocabs'])
   embeddings = embeddings_factory.get_embeddings(program_flags['embeddings'], vocab, embedding_dim=program_flags['embeddings_dim'])
-  batch_size = int(program_flags['batch_size'] / ngpus_per_node) if ngpus_per_node is not None else program_flags['batch_size']
+  batch_size = program_flags['batch_size']
   iterator = iterators_factory.get_iterator(program_flags['dataset'], batch_size)
   iterator.index_with(vocab)
   models_args = {
