@@ -103,6 +103,8 @@ def save_ckpt(logger, epoch, model, optimizer, ckpt_dir):
   logger.info("saving ckpt: %d", epoch)
   states = {'epoch': epoch, 'model_state_dict': model.state_dict(), 'optim_state_dict': optimizer.state_dict()}
   ckpt_path = os.path.join(ckpt_dir, 'model_state_epoch.pth')
+  if os.path.exists(ckpt_path):
+      os.remove(ckpt_path)
   torch.save(states, ckpt_path)
 
 
