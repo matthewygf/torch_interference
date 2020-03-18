@@ -55,12 +55,12 @@ resnet_wide_18_2_bottleneck_cmd = ['python', 'image_classifier.py', '--model', '
 # NOTE: NLPs
 pos_cmd = ['python', 'languages.py', '--model', 'lstm', '--dataset', 'ud-eng', '--max_epochs', '6', '--task', 'pos', '--use_cuda', 'True']
 # NOTE: these mt tasks aren't very good , feel free to tune, most likely because of "number of vocabs".
-mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '10000', '--batch_size', '16' ,'--use_cuda', 'True',  '--max_sentence_length', '250']
-mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '64', '--hiddens_dim', '128' '--task', 'mt', '--max_vocabs', '10000','--batch_size', '16', '--use_cuda', 'True', '--max_sentence_length', '250']
+mt1_cmd = ['python', 'languages.py', '--embeddings_dim', '64', '--hiddens_dim', '128' ,'--model', 'lstm', '--dataset', 'nc_zhen', '--task', 'mt', '--max_vocabs', '10000','--use_cuda', 'True',  '--max_sentence_length', '250']
+mt2_cmd = ['python', 'languages.py', '--model', 'transformer', '--dataset', 'nc_zhen', '--embeddings_dim', '64', '--hiddens_dim', '128' '--task', 'mt', '--max_vocabs', '10000', '--use_cuda', 'True', '--max_sentence_length', '250']
 # NOTE: language model need some tuning too.
-lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '64', '--max_len', '30', '--hiddens_dim', '64', '--max_vocabs', '10000',  '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3']
-lm_med_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '1', '--max_sentence_length', '250']
-lm_large_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--batch_size', '16', '--max_epochs', '3', '--num_layers', '2', '--max_sentence_length', '250']
+lm_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '64', '--max_len', '30', '--hiddens_dim', '64', '--max_vocabs', '10000',  '--bidirectional', 'True', '--max_epochs', '3']
+lm_med_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--bidirectional', 'True',  '--max_epochs', '3', '--num_layers', '1', '--max_sentence_length', '250']
+lm_large_cmd = ['python', 'languages.py', '--model', 'lstm', '--task', 'lm', '--dataset', 'wikitext', '--use_cuda', 'True', '--embeddings_dim', '128', '--max_len', '30', '--hiddens_dim', '128', '--max_vocabs', '10000', '--drop_out', '0.2', '--bidirectional', 'True', '--max_epochs', '3', '--num_layers', '2', '--max_sentence_length', '250']
 
 
 # NOTE: MISCs
