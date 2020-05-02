@@ -64,10 +64,10 @@ with open("timing_models_2080.csv", "w+") as f:
       cmd = ['--run_name', r_name, '--batch_size', str(b)] + data_dir
       cmd = v + cmd
       start_time = time.time()
-      p = subprocess.Popen(v, stdout=subprocess.STDOUT, stderr=subprocess.PIPE)
-      while p.poll() == None:
-        time.sleep(5)
-        print(f"Still running {k}")
+      with open(r_name+".txt", "w+") as rf:
+        p = subprocess.Popen(cmd, stdout=rf, stderr=rf)
+        while p.poll() == None:
+          time.sleep(1)
       elapsed = time.time() - start_time
       try:
         csv_writer.writerow({'model':k, 'batch': str(b),'application_runtime(s)': str(elapsed)})
