@@ -20,6 +20,7 @@ from allennlp.models import Model
 
 from allennlp.training.trainer import Trainer
 from allennlp.training.checkpointer import Checkpointer
+from allennlp.common.util import lazy_groups_of
 
 from languages_data import pos_data_reader, embeddings_factory, iterators_factory, datasets_factory, preprocessing_factory
 from language_models import models_factory, datareader_cfg_factory
@@ -29,7 +30,7 @@ import torch.distributed as dist
 import torch.multiprocessing as mlproc
 from  train_utils.distributed_trainer import DistributeTrainer
 
-from ops_profiler.flop_counter import *
+import ops_profiler.flop_counter as counter
 
 import time
 import utils as U
@@ -214,12 +215,11 @@ def distribute_worker(gpu_index, ngpus_per_node, world_size, program_flags):
   dist.init_process_group(backend=program_flags['dist_backend'], init_method=program_flags['dist_method'], world_size=world_size, rank=rank)
   
   logger.info("Rank %d --- preparing to start training", rank)
-# Set cuda to a single gpu context  
+  # Set cuda to a single gpu context  
   torch.cuda.set_device(gpu_index)
   device = torch.device("cuda:%d" % gpu_index)
   model.cuda(gpu_index)
   model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[gpu_index])
-
 
   trainer = DistributeTrainer(rank=rank, 
                               worldsize=world_size, 
@@ -255,6 +255,16 @@ def single_worker(logger, model, reader, out_feature_key, optimizer, iterator, t
   # NOTE: THIS CKPT Mechanism only ckpt at the end of every epoch.
   # if an epoch is more than 1 day, then you take care of it yourself :P
   ckpter = Checkpointer(serialization_dir=FLAGS.ckpt_dir, num_serialized_models_to_keep=1)
+  
+  if FLAGS.profile_only:
+    raw_train_generator = iterator(train_dataset, num_epochs=1, shuffle=False)
+    train_generator = lazy_groups_of(raw_train_generator, 1)
+    _prof_input = next(train_generator)[0]
+    stats = counter.profile(model, input_size=(FLAGS.batch_size,), logger=logger, is_cnn=False, rnn_input=_prof_input)
+    logger.info("DNN_Features: %s", str(stats))
+    print("DNN_Features: ", str(stats))
+    sys.exit(0)
+
   trainer = Trainer(model=model,
                     optimizer=optimizer,
                     iterator=iterator,

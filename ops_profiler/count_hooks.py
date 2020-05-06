@@ -186,5 +186,19 @@ def count_linear(m, x, y):
     m.total_ops = torch.Tensor([int(total_ops)])
 
 def count_lstm(m, x, y):
-   print(m)
+    print(x.size())
+    # each input has the following 
+    # gates = x * w + h * r 
+    # split gates into 4.
+    # where each x split goes through [tanh or sigmoid]
+    # calculate i
+    # calculate f
+    # calculate c
+    # calculate C
+    # calculate o
+    # calculate H
+    
+
+def count_gru(m, x, y):
+    print(m)
    
