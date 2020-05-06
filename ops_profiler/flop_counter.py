@@ -8,6 +8,7 @@ from torch.nn.modules.conv import _ConvNd
 from image_models.model import MBConvBlock, SwishActivation
 from image_models.utils import Conv2dSamePadding, Pad2d
 from .count_hooks import *
+from allennlp.nn import util as nn_util
 
 register_hooks = {
     nn.Conv1d: count_convNd,
@@ -45,12 +46,14 @@ register_hooks = {
     nn.AdaptiveAvgPool3d: count_adap_avgpool,
     nn.Linear: count_linear,
     nn.Dropout: None,
-    nn.LSTM: count_lstm
+    nn.LSTM: count_lstm,
+    nn.GRU: count_gru,
+
 }
 
 activation_sets = set(['softmax', 'sigmoid', 'relu', 'tan', 'relu6'])
 
-def profile(model, input_size, custom_ops={}, device="cpu", logger=None, is_cnn=False):
+def profile(model, input_size, custom_ops={}, device="cpu", logger=None, is_cnn=False, rnn_input=None):
     handler_collection = []
     logger.info("start counting for %s", str(model.__class__.__name__))
 
@@ -102,17 +105,37 @@ def profile(model, input_size, custom_ops={}, device="cpu", logger=None, is_cnn=
             total_linear += 1
         elif name in activation_sets:
             total_activation +=1 
-        elif 'lstm' in name or 'gru' in name:
-            total_rnns += 1
+        elif 'lstm' in name:
+            # input x and hidden are the only dotproducts
+            # there are element wise matmul, leaving that to the flops count.
+            each_timestep_linear = 2 
+            each_timestep_activate = 5
+            # input x and hidden -> gates
+            total_linear += each_timestep_linear
+            # tanh sigmoid within the gates.
+            total_activation += each_timestep_activate
+        elif 'gru' in name:
+            # input x and hidden -> 3 dot products
+            each_timestep_linear = 2 * 3
+            each_timestep_active = 4
+            total_linear += each_timestep_linear
+            # tanh sigmoid, [z,r, h_default, h_linear]
+            total_activation += each_timestep_active
+
         else:
             total_others += 1
 
     logger.info("Count total num of register modules: %d", len(handler_collection))
 
-    x = torch.zeros(input_size).to(device)
-    with torch.no_grad():
-      model(x)
-      
+    if is_cnn:
+
+        x = torch.zeros(input_size).to(device)
+        with torch.no_grad():
+            model(x)
+    else:
+        x = nn_util.move_to_device(rnn_input, -1)
+        with torch.no_grad():
+            model(**x)
 
     total_ops = 0
     total_params = 0
