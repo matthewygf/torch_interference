@@ -32,13 +32,13 @@ datasets_links = {
     'train': {
       'preprocess': False,
       'paths': [
-        'https://s3.eu-west-2.amazonaws.com/mattzooey/training-parallel-nv-v12/training/news-commentary-v14.en-zh.train.tsv',
+        'https://mattyzap.s3-ap-southeast-1.amazonaws.com/training-parallel-nv-v12/training/news-commentary-v14.en-zh.train.tsv',
         ]
       },
     'val': {
       'preprocess': False,
       'paths': [
-        'https://s3.eu-west-2.amazonaws.com/mattzooey/training-parallel-nv-v12/training/news-commentary-v14.en-zh.val.tsv'
+        'https://mattyzap.s3-ap-southeast-1.amazonaws.com/training-parallel-nv-v12/training/news-commentary-v14.en-zh.val.tsv',
       ]
     }
   },

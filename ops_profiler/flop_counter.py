@@ -45,6 +45,7 @@ register_hooks = {
     nn.AdaptiveAvgPool2d: count_adap_avgpool,
     nn.AdaptiveAvgPool3d: count_adap_avgpool,
     nn.Linear: count_linear,
+    nn.LSTMCell: count_lstmCell,
     nn.Dropout: None,
     nn.LSTM: count_lstm,
     nn.GRU: count_gru,
@@ -98,14 +99,20 @@ def profile(model, input_size, custom_ops={}, device="cpu", logger=None, is_cnn=
         # NOTE: DOES NOT COUNT SKIP_CONNECT
         # NOTE: DOES NOT COUNT ATTENTION
         name = str(name_mod[1].__class__.__name__).lower()
-        # print(idx ,'-->', name_mod[0])
+        print(idx ,'-->', name_mod[0],'-----',name)
         if 'conv' in name:
             total_convs += 1
-        elif 'linear' in name or 'embedding' in name:
+        elif 'linear' in name or 'embedding' in name or 'dotproductatten' in name:
+            # dotprodatten: -> bmm , so its just a linear .
             total_linear += 1
         elif name in activation_sets:
             total_activation +=1 
-        elif 'lstm' in name:
+        elif "lstm" in name and 'cell' in name:
+            each_timestep_linear = 2 
+            each_timestep_activate = 5
+            total_linear += each_timestep_linear
+            total_activation += each_timestep_activate
+        elif 'lstm' in name and 'cell' not in name:
             layers = name_mod[1].num_layers
             bi = 2 if name_mod[1].bidirectional else 1
             input_tokens = rnn_input.get('input_tokens', None)

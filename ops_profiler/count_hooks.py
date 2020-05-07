@@ -207,7 +207,15 @@ def count_lstm(m, x, y):
         # calculate H
     m.total_ops = torch.Tensor([int(total_flops)])
 
-
+def count_lstmCell(m, x, y):
+    total_flops = 0
+    # x w dotprod
+    total_flops += (multiply_adds * np.prod(x[0].size()) * (x[0].size(1)*4))
+    # h r dotprod
+    total_flops += (multiply_adds * np.prod(x[1][0].size()) * (x[1][0].size(1)*4))
+    # the gates matmul and act
+    total_flops += (np.prod(x[0].size()) * 6)
+    m.total_ops = torch.Tensor([int(total_flops)])
 
 def count_gru(m, x, y):
     print(m)
