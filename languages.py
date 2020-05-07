@@ -121,10 +121,10 @@ def main(argv):
     distribute_main(program_flags)
   else:
     logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset = pre_init(program_flags)
-    if program_flags['profile_only']:
-      # language
-      torch.save(model.state_dict(), program_flags['run_name']+"model.pth")
-      sys.exit(1)
+    # if program_flags['profile_only']:
+    #   # language
+    #   torch.save(model.state_dict(), program_flags['run_name']+"model.pth")
+    #   sys.exit(1)
 
     single_worker(logger, model, reader, out_feature_key, optimizer, iterator, train_dataset, validation_dataset)
     
@@ -262,7 +262,6 @@ def single_worker(logger, model, reader, out_feature_key, optimizer, iterator, t
     _prof_input = next(train_generator)[0]
     stats = counter.profile(model, input_size=(FLAGS.batch_size,), logger=logger, is_cnn=False, rnn_input=_prof_input)
     logger.info("DNN_Features: %s", str(stats))
-    print("DNN_Features: ", str(stats))
     sys.exit(0)
 
   trainer = Trainer(model=model,

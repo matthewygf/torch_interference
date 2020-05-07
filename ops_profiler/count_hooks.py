@@ -7,7 +7,7 @@ import argparse
 
 import torch
 import torch.nn as nn
-
+import numpy as np
 multiply_adds = 1
 
 def count_convNd(m, x, y):
@@ -186,18 +186,28 @@ def count_linear(m, x, y):
     m.total_ops = torch.Tensor([int(total_ops)])
 
 def count_lstm(m, x, y):
-    print(x.size())
-    # each input has the following 
-    # gates = x * w + h * r 
-    # split gates into 4.
-    # where each x split goes through [tanh or sigmoid]
-    # calculate i
-    # calculate f
-    # calculate c
-    # calculate C
-    # calculate o
-    # calculate H
-    
+    # num_elements
+    #y[0].batch_sizes contains the sequence.
+    dim = y[1][0].size(2)
+    total_flops = 0
+    for y_split in y[0].batch_sizes:
+        sen = y_split.numpy()
+        x_t = np.zeros((sen, dim))
+        # hidden * r and x_t * weight
+        total_flops += (multiply_adds * np.prod(x_t.shape) * (dim*4) * 2)
+        total_flops += (np.prod(x_t.shape) * 6)
+        # gates = x * w + h * r 
+        # split gates
+        # where each x split goes through [tanh or sigmoid]
+        # calculate i
+        # calculate f
+        # calculate c
+        # calculate C
+        # calculate o
+        # calculate H
+    m.total_ops = torch.Tensor([int(total_flops)])
+
+
 
 def count_gru(m, x, y):
     print(m)

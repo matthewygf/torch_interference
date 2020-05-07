@@ -101,19 +101,25 @@ def profile(model, input_size, custom_ops={}, device="cpu", logger=None, is_cnn=
         # print(idx ,'-->', name_mod[0])
         if 'conv' in name:
             total_convs += 1
-        elif 'linear' in name:
+        elif 'linear' in name or 'embedding' in name:
             total_linear += 1
         elif name in activation_sets:
             total_activation +=1 
         elif 'lstm' in name:
+            layers = name_mod[1].num_layers
+            bi = 2 if name_mod[1].bidirectional else 1
+            input_tokens = rnn_input.get('input_tokens', None)
+            assert input_tokens is not None
+            t = input_tokens.get('tokens', None) if input_tokens is not None else None
+            steps = 1 if t is None else t.size()[1]
             # input x and hidden are the only dotproducts
             # there are element wise matmul, leaving that to the flops count.
             each_timestep_linear = 2 
             each_timestep_activate = 5
             # input x and hidden -> gates
-            total_linear += each_timestep_linear
+            total_linear += each_timestep_linear * layers * bi * steps
             # tanh sigmoid within the gates.
-            total_activation += each_timestep_activate
+            total_activation += each_timestep_activate * layers * bi * steps
         elif 'gru' in name:
             # input x and hidden -> 3 dot products
             each_timestep_linear = 2 * 3
