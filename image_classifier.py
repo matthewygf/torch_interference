@@ -57,6 +57,7 @@ flags.DEFINE_string("dist_backend", None, "Which distributed backend to use, if 
 flags.DEFINE_string("dist_method", None, "Which distributed method to use. e.g. starts with file://path/to/file, env://, tcp://IP:PORT. ")
 flags.DEFINE_integer("world_size", 1, "Number of distributed process. e.g. all the GPUs.")
 flags.DEFINE_integer('thread_workers', 2, 'Number of threads for data loader')
+flags.DEFINE_integer('device', 0, "specify a single GPU device for training.")
 
 flags.mark_flag_as_required('run_name')
 flags.mark_flag_as_required('model')
@@ -154,7 +155,7 @@ def single_main():
     logger.warning("No cudart, probably means you do not have cuda on this machine.")
 
   if not FLAGS.profile_only:
-    device = torch.device("cuda" if FLAGS.use_cuda else "cpu")
+    device = torch.device("cuda:"+str(FLAGS.device) if FLAGS.use_cuda else "cpu")
   else:
     device = torch.device("cpu")
 

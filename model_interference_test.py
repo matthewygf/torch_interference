@@ -17,8 +17,8 @@ _default_batch_size = [64]
 
 # NOTE: MISCs
 nvprof_prefix_cmd = ['nvprof', '--profile-from-start', 'off', '--csv',]
-pmon_mod_cmd = ['pmon', '--csv=true', '--interval=250']
-pcie_mod_cmd = ['pcie', '--csv=true', '--interval=250', '--once=false']
+pmon_mod_cmd = ['pmon', '--csv=true', '--interval=250', '--once=false']
+pcie_mod_cmd = ['pcie', '--csv=true', '--interval=250']
 
 models_train = {
     'mnasnet0_5_cmd': mnasnet0_5_cmd,
@@ -89,7 +89,7 @@ def get_average_num_step(file_path):
                 mean = (mean + float(time_elapsed)) / num
     return (num, mean)
 
-def create_process(batch_size, model_name, index, experiment_path, percent=0.0, is_nvprof=False, nvprof_args=None):
+def create_process(batch_size, model_name, index, experiment_path, percent=0.0, is_nvprof=False, nvprof_args=None, gpu=None):
     execution_id = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')
     output_dir_name = execution_id+model_name+str(index)
     if is_nvprof:
@@ -112,6 +112,8 @@ def create_process(batch_size, model_name, index, experiment_path, percent=0.0, 
     cmd = cmd + ['--dataset_dir', curr_dir]
     cmd = cmd + ['--run_name', output_dir_name]
     cmd = cmd + ['--batch_size', str(batch_size)]
+    if gpu is not None:
+      cmd = cmd + ['--device', str(gpu)]
     if _PROF_ONLY:
         cmd = cmd + ['--profile_only']
 
@@ -160,6 +162,7 @@ _RUNS_PER_SET = 1
 _START = 1
 _RUN_NVPROF = False
 _PROF_ONLY = False 
+GPU = 1
 
 def run(
     batch_size,
@@ -180,9 +183,10 @@ def run(
     if is_single and nvprofiling:
         # 1. we want to use nvprof three times at least, make sure the metrics are correct
         for metric_run in range(3):
-          nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, 0.92, True, 
-              ['--timeout', str(60*7),
-               '--metrics', 'achieved_occupancy,ipc,sm_efficiency,dram_utilization,sysmem_utilization,flop_dp_efficiency,flop_sp_efficiency',])
+          nvp, out, err, path, out_dir = create_process(experiment_set[0], 1, experiment_path, percent=0.92, is_nvprof=True, 
+              nvprof_args=['--timeout', str(60*7), '--metrics', 
+                'achieved_occupancy,ipc,sm_efficiency,dram_utilization,sysmem_utilization,flop_dp_efficiency,flop_sp_efficiency',],
+              gpu=GPU)
           while nvp.poll() is None:
               print("nvprof profiling metrics %s" % experiment_set[0])
               time.sleep(2)
@@ -213,7 +217,7 @@ def run(
             if i > 0:
               time.sleep(20)
             start_time = time.time()
-            p, out, err, path, out_dir = create_process(batch_size, m, i, experiment_path, percent)
+            p, out, err, path, out_dir = create_process(batch_size, m, i, experiment_path, percent=percent, gpu=GPU)
             processes_list.append(p)
             err_logs.append(err)
             out_logs.append(out)
